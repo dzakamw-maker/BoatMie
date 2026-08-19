@@ -192,11 +192,15 @@ export const FolderCaseView: React.FC<FolderCaseViewProps> = ({
                       : 'opacity-85 hover:opacity-100 hover:brightness-105 hover:translate-x-0.5'
                   }`}
                 >
-                  <div className="flex items-center justify-between font-mono text-[9px] opacity-75 uppercase mb-0.5">
+                  <div className="flex items-center justify-between font-mono text-[10px] font-bold opacity-80 uppercase mb-1">
                     <span>{folder.indexNumber}</span>
-                    {isSelected && <span className="font-bold">● ACTIVE</span>}
+                    {isSelected && (
+                      <span className="font-bold text-[9px] bg-black/30 px-1.5 py-0.5 rounded tracking-wider">
+                        ● ACTIVE
+                      </span>
+                    )}
                   </div>
-                  <div className="font-sans font-black text-sm uppercase tracking-wide">
+                  <div className="font-sans text-base sm:text-lg uppercase tracking-wider leading-tight text-white drop-shadow-xs">
                     {folder.label}
                   </div>
                 </button>

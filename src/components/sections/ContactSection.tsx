@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { CONTACT_DATA } from '@/data/dossierData';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
-import { Mail, Github, Linkedin, Instagram, Send, CheckCircle2, MapPin, Terminal, AlertCircle } from 'lucide-react';
+import { Mail, Github, Linkedin, Instagram, Send, CheckCircle2, MapPin, Terminal, AlertCircle, ArrowUpRight } from 'lucide-react';
 
 export const ContactSection: React.FC = () => {
   const [formState, setFormState] = useState({
@@ -94,7 +94,7 @@ export const ContactSection: React.FC = () => {
           {/* Social Channels List */}
           <div className="space-y-2 font-mono text-xs">
             <a
-              href={CONTACT_DATA.github}
+              href="https://github.com/dzakamw-maker"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-neutral-900 transition-colors shadow-2xs group"
@@ -103,11 +103,14 @@ export const ContactSection: React.FC = () => {
                 <Github className="w-4 h-4 text-neutral-900" />
                 <span className="font-bold uppercase tracking-wider">GitHub Repository</span>
               </div>
-              <span className="text-neutral-400 group-hover:text-neutral-900"><a href="https://github.com/dzakamw-maker">GitHub</a> →</span>
+              <span className="text-neutral-400 group-hover:text-neutral-900 inline-flex items-center gap-1">
+                <span>GitHub</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
             </a>
 
             <a
-              href={CONTACT_DATA.linkedin}
+              href="https://www.linkedin.com/in/dzaka/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-blue-600 transition-colors shadow-2xs group"
@@ -116,11 +119,14 @@ export const ContactSection: React.FC = () => {
                 <Linkedin className="w-4 h-4 text-blue-600" />
                 <span className="font-bold uppercase tracking-wider">LinkedIn Professional</span>
               </div>
-              <span className="text-neutral-400 group-hover:text-blue-600"><a href="https://www.linkedin.com/in/dzaka/">LinkedIn</a> →</span>
+              <span className="text-neutral-400 group-hover:text-blue-600 inline-flex items-center gap-1">
+                <span>LinkedIn</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
             </a>
 
             <a
-              href={CONTACT_DATA.instagram}
+              href="https://www.instagram.com/dzakaharja/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-pink-600 transition-colors shadow-2xs group"
@@ -129,7 +135,10 @@ export const ContactSection: React.FC = () => {
                 <Instagram className="w-4 h-4 text-pink-600" />
                 <span className="font-bold uppercase tracking-wider">Instagram Stage & Life</span>
               </div>
-              <span className="text-neutral-400 group-hover:text-pink-600"><a href="https://www.instagram.com/dzakaharja/">Instagram</a> →</span>
+              <span className="text-neutral-400 group-hover:text-pink-600 inline-flex items-center gap-1">
+                <span>Instagram</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
             </a>
           </div>
 

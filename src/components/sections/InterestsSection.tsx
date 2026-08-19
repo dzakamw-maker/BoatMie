@@ -181,8 +181,8 @@ export const InterestsSection: React.FC = () => {
                   <div className="w-4 h-4 rounded-full bg-neutral-800" />
                 </div>
               </div>
-              <div className="font-mono text-[11px] text-neutral-300 truncate text-center">
-                TAPE REF: {activeInterest.id.toUpperCase()}-2026.WAV
+              <div className="font-mono text-[10px] sm:text-[11px] text-neutral-300 text-center tracking-wider px-1">
+                TAPE REF: {activeInterest.id.toUpperCase().replace('-', '_')}.WAV
               </div>
             </div>
           </div>

@@ -116,7 +116,7 @@ export const FolderDeckView: React.FC<FolderDeckViewProps> = ({
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => onSelectFolder(folder.id)}
-                      className="group flex items-center gap-3 px-4 sm:px-6 py-2 sm:py-3 bg-white/15 hover:bg-white/25 rounded-lg border border-white/30 text-white font-sans font-black text-lg sm:text-2xl uppercase tracking-wide transition-all shadow-inner hover:scale-[1.01]"
+                      className="group flex items-center gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-white/15 hover:bg-white/25 rounded-lg border border-white/30 text-white font-sans text-xl sm:text-2xl uppercase tracking-wider transition-all shadow-inner hover:scale-[1.01]"
                     >
                       <span className="font-mono text-xs opacity-75 px-1.5 py-0.5 rounded bg-black/30">
                         {folder.indexNumber}

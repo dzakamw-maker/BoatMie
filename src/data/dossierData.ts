@@ -245,7 +245,7 @@ export const PROJECTS_DATA: ProjectItem[] = [
     techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Firebase Firestore', 'Lucide Icons'],
     repoUrl: 'https://github.com/dzakast/acrepar',
     liveUrl: 'https://acrepar.vercel.app',
-    imageUrl: '/media/projects/acrepar.png',
+    imageUrl: '/media/projects/acrepar.jpg',
     featured: true,
     date: '2025–2026',
     metrics: [
@@ -371,7 +371,7 @@ export const CERTIFICATES_DATA: CertificateItem[] = [
 ];
 
 export const CONTACT_DATA = {
-  email: 'dzakaofficial@gmail.com',
+  email: 'dzakamw@gmail.com',
   github: 'https://github.com/dzakast',
   linkedin: 'https://linkedin.com/in/dzakast',
   instagram: 'https://instagram.com/dzakast',
