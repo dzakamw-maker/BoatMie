@@ -11,20 +11,32 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'deck' | 'case'>('deck');
   const [activeFolderId, setActiveFolderId] = useState<FolderId>('about');
 
-  // Sync with URL hash on load
+  // Sync with URL query params or hash on load
   useEffect(() => {
-    const handleHashChange = () => {
+    const syncFromURL = () => {
+      // Check query param first (e.g. ?folder=projects)
+      const urlParams = new URLSearchParams(window.location.search);
+      const folderParam = (urlParams.get('folder') || urlParams.get('tab')) as FolderId;
+      
+      // Check hash (e.g. #projects)
       const hash = window.location.hash.replace('#', '') as FolderId;
-      const validFolder = FOLDERS_CONFIG.find((f) => f.id === hash);
+      
+      const targetId = folderParam || hash;
+      const validFolder = FOLDERS_CONFIG.find((f) => f.id === targetId);
+      
       if (validFolder) {
         setActiveFolderId(validFolder.id);
         setViewMode('case');
       }
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    syncFromURL();
+    window.addEventListener('hashchange', syncFromURL);
+    window.addEventListener('popstate', syncFromURL);
+    return () => {
+      window.removeEventListener('hashchange', syncFromURL);
+      window.removeEventListener('popstate', syncFromURL);
+    };
   }, []);
 
   // Keyboard navigation

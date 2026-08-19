@@ -18,8 +18,21 @@ export const ContactSection: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [honeypot, setHoneypot] = useState<string>('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Honeypot check: If invisible field is filled, silently block bot
+    if (honeypot) {
+      setIsSubmitting(true);
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setIsSubmitted(true);
+      }, 500);
+      return;
+    }
+
     if (!formState.name || !formState.email || !formState.message) {
       setError('Harap isi semua kolom transmisi sebelum mengirim.');
       return;
@@ -179,6 +192,18 @@ export const ContactSection: React.FC = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+              {/* Invisible Honeypot field for bot protection */}
+              <div className="hidden" aria-hidden="true">
+                <input
+                  type="text"
+                  name="website_hp"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
+
               {error && (
                 <div className="p-3 bg-red-50 border border-red-300 text-red-700 rounded flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />

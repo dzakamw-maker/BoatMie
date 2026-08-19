@@ -42,3 +42,10 @@ next-env.d.ts
 *.avi
 *b7eef492-c12b-4f60-b0ce-3df75a113f9.png
 *3af17d7a-f396-4926-bf73-fbcebd40e.jpg
+
+# Local reference design files
+refrence1.jpg
+refrence2.png
+refrence*.*
+reference*.*
+
