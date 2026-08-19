@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PROJECTS_DATA } from '@/data/dossierData';
+import { fetchProjects } from '@/lib/firestore';
 import { ProjectItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -20,12 +21,21 @@ import {
 } from 'lucide-react';
 
 export const ProjectsSection: React.FC = () => {
+  const [projects, setProjects] = useState<ProjectItem[]>(PROJECTS_DATA);
   const [selectedProjectId, setSelectedProjectId] = useState<string>(PROJECTS_DATA[0].id);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
 
-  const selectedProject = PROJECTS_DATA.find((p) => p.id === selectedProjectId) || PROJECTS_DATA[0];
+  useEffect(() => {
+    fetchProjects().then((data) => {
+      if (data && data.length > 0) {
+        setProjects(data);
+      }
+    });
+  }, []);
+
+  const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0] || PROJECTS_DATA[0];
 
   // Close modal on Escape key press
   useEffect(() => {
@@ -46,13 +56,13 @@ export const ProjectsSection: React.FC = () => {
 
   // Unique categories for filter pills
   const categories = useMemo(() => {
-    const set = new Set(PROJECTS_DATA.map((p) => p.category));
+    const set = new Set(projects.map((p) => p.category));
     return ['ALL', ...Array.from(set)];
-  }, []);
+  }, [projects]);
 
   // Filtered projects for the Archive Modal
   const filteredProjects = useMemo(() => {
-    return PROJECTS_DATA.filter((p) => {
+    return projects.filter((p) => {
       const matchesCategory =
         activeCategoryFilter === 'ALL' || p.category === activeCategoryFilter;
       const matchesSearch =
@@ -62,7 +72,7 @@ export const ProjectsSection: React.FC = () => {
         p.techStack.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, activeCategoryFilter]);
+  }, [projects, searchQuery, activeCategoryFilter]);
 
   const handleSelectProjectFromModal = (projectId: string) => {
     setSelectedProjectId(projectId);
@@ -101,13 +111,13 @@ export const ProjectsSection: React.FC = () => {
           className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-purple-900 hover:bg-purple-950 text-white font-mono text-xs font-bold uppercase rounded shadow-md hover:shadow-lg transition-all shrink-0 active:scale-95 border border-purple-950"
         >
           <Archive className="w-4 h-4 text-purple-300" />
-          <span>KATALOG SEMUA ARSIP ({PROJECTS_DATA.length})</span>
+          <span>KATALOG SEMUA ARSIP ({projects.length})</span>
         </button>
       </div>
 
       {/* Projects Grid Selector */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {PROJECTS_DATA.map((project, idx) => {
+        {projects.map((project, idx) => {
           const isSelected = project.id === selectedProjectId;
           const displayStatus = project.status === 'Active Development' ? 'ACTIVE DEV' : project.status;
           return (
@@ -464,7 +474,7 @@ export const ProjectsSection: React.FC = () => {
             <div className="p-3.5 bg-neutral-100 border-t border-neutral-200 flex flex-wrap items-center justify-between text-neutral-600 font-mono text-xs gap-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>TOTAL ARSIP: {filteredProjects.length} DARI {PROJECTS_DATA.length} BERKAS</span>
+                <span>TOTAL ARSIP: {filteredProjects.length} DARI {projects.length} BERKAS</span>
               </div>
               <span className="text-neutral-500">TEKAN ESC ATAU KLIK DI LUAR UNTUK MENUTUP</span>
             </div>

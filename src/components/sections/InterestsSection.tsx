@@ -1,15 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { INTERESTS_DATA } from '@/data/dossierData';
+import { fetchInterests } from '@/lib/firestore';
+import { InterestItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
 import { StickyNote } from '../common/StickyNote';
 import { Coffee, Compass, Gamepad2, Waves, Disc3, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const InterestsSection: React.FC = () => {
+  const [interests, setInterests] = useState<InterestItem[]>(INTERESTS_DATA);
   const [activeInterestId, setActiveInterestId] = useState<string>(INTERESTS_DATA[0].id);
-  const activeInterest = INTERESTS_DATA.find((item) => item.id === activeInterestId) || INTERESTS_DATA[0];
+
+  useEffect(() => {
+    fetchInterests().then((data) => {
+      if (data && data.length > 0) {
+        setInterests(data);
+      }
+    });
+  }, []);
+
+  const activeInterest = interests.find((item) => item.id === activeInterestId) || interests[0] || INTERESTS_DATA[0];
 
   const getInterestIcon = (id: string) => {
     switch (id) {
@@ -53,7 +65,7 @@ export const InterestsSection: React.FC = () => {
 
       {/* Interactive Tabs / Index Selector */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {INTERESTS_DATA.map((item) => {
+        {interests.map((item) => {
           const isSelected = item.id === activeInterestId;
           return (
             <button

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { CERTIFICATES_DATA } from '@/data/dossierData';
+import { fetchCertificates } from '@/lib/firestore';
 import { CertificateItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -20,13 +21,22 @@ import {
 } from 'lucide-react';
 
 export const CertificatesSection: React.FC = () => {
+  const [certificates, setCertificates] = useState<CertificateItem[]>(CERTIFICATES_DATA);
   const [selectedCertId, setSelectedCertId] = useState<string>(CERTIFICATES_DATA[0].id);
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalCategoryFilter, setModalCategoryFilter] = useState<string>('ALL');
 
+  useEffect(() => {
+    fetchCertificates().then((data) => {
+      if (data && data.length > 0) {
+        setCertificates(data);
+      }
+    });
+  }, []);
+
   const selectedCert =
-    CERTIFICATES_DATA.find((c) => c.id === selectedCertId) || CERTIFICATES_DATA[0];
+    certificates.find((c) => c.id === selectedCertId) || certificates[0] || CERTIFICATES_DATA[0];
 
   // Close modal on Escape key press
   useEffect(() => {
@@ -45,15 +55,15 @@ export const CertificatesSection: React.FC = () => {
     };
   }, [isLedgerModalOpen]);
 
-  // Unique categories list
-  const categories = useMemo(() => {
-    const set = new Set(CERTIFICATES_DATA.map((c) => c.category));
+  // Unique categories for ledger filter pills
+  const ledgerCategories = useMemo(() => {
+    const set = new Set(certificates.map((c) => c.category));
     return ['ALL', ...Array.from(set)];
-  }, []);
+  }, [certificates]);
 
-  // Modal filtered credentials by search and category
+  // Filtered certificates for Ledger Modal
   const modalFilteredCertificates = useMemo(() => {
-    return CERTIFICATES_DATA.filter((c) => {
+    return certificates.filter((c) => {
       const matchesCategory =
         modalCategoryFilter === 'ALL' || c.category === modalCategoryFilter;
       const matchesSearch =
@@ -63,7 +73,7 @@ export const CertificatesSection: React.FC = () => {
         c.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     });
-  }, [searchQuery, modalCategoryFilter]);
+  }, [certificates, searchQuery, modalCategoryFilter]);
 
   const handleSelectFromModal = (certId: string) => {
     setSelectedCertId(certId);
@@ -102,13 +112,13 @@ export const CertificatesSection: React.FC = () => {
           className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-800 hover:bg-amber-900 text-white font-mono text-xs font-bold uppercase rounded shadow-md hover:shadow-lg transition-all shrink-0 active:scale-95 border border-amber-900"
         >
           <Scroll className="w-4 h-4 text-amber-300" />
-          <span>LIHAT SEMUA SERTIFIKAT ({CERTIFICATES_DATA.length})</span>
+          <span>LIHAT SEMUA SERTIFIKAT ({certificates.length})</span>
         </button>
       </div>
 
       {/* Grid of Credentials */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {CERTIFICATES_DATA.map((cert) => {
+        {certificates.map((cert) => {
           const isSelected = cert.id === selectedCertId;
           return (
             <button
@@ -284,7 +294,7 @@ export const CertificatesSection: React.FC = () => {
                   <Filter className="w-3 h-3" />
                   Kategori:
                 </span>
-                {categories.map((cat) => {
+                {ledgerCategories.map((cat) => {
                   const isActive = modalCategoryFilter === cat;
                   return (
                     <button
@@ -382,7 +392,7 @@ export const CertificatesSection: React.FC = () => {
             <div className="p-3.5 bg-neutral-100 border-t border-neutral-200 flex flex-wrap items-center justify-between text-neutral-600 font-mono text-xs gap-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-amber-700" />
-                <span>TOTAL REGISTER: {modalFilteredCertificates.length} DARI {CERTIFICATES_DATA.length} KREDENSIAL</span>
+                <span>TOTAL REGISTER: {modalFilteredCertificates.length} DARI {certificates.length} KREDENSIAL</span>
               </div>
               <span className="text-neutral-500">TEKAN ESC ATAU KLIK DI LUAR UNTUK MENUTUP</span>
             </div>

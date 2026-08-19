@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { CONTACT_DATA } from '@/data/dossierData';
+import { submitMessage } from '@/lib/firestore';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
 import { Mail, Github, Linkedin, Instagram, Send, CheckCircle2, MapPin, Terminal, AlertCircle, ArrowUpRight } from 'lucide-react';
@@ -41,11 +42,18 @@ export const ContactSection: React.FC = () => {
     setError(null);
     setIsSubmitting(true);
 
-    // Frontend simulation (Ready to wire to Firebase Server Action / API Route)
-    setTimeout(() => {
+    try {
+      const res = await submitMessage(formState);
+      if (res.success) {
+        setIsSubmitted(true);
+      } else {
+        setError(res.error || 'Gagal mengirim transmisi ke server.');
+      }
+    } catch {
+      setError('Terjadi kesalahan koneksi jaringan.');
+    } finally {
       setIsSubmitting(false);
-      setIsSubmitted(true);
-    }, 900);
+    }
   };
 
   return (

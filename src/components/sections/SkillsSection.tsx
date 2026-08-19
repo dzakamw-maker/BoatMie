@@ -1,14 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SKILL_CATEGORIES } from '@/data/dossierData';
+import { fetchSkillCategories } from '@/lib/firestore';
+import { SkillCategory } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TechIcon } from '../common/TechIcon';
 import { Cpu, Terminal, Database, Cloud, Layers } from 'lucide-react';
 
 export const SkillsSection: React.FC = () => {
+  const [categories, setCategories] = useState<SkillCategory[]>(SKILL_CATEGORIES);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(0);
-  const activeCategory = SKILL_CATEGORIES[activeCategoryIndex];
+
+  useEffect(() => {
+    fetchSkillCategories().then((data) => {
+      if (data && data.length > 0) {
+        setCategories(data);
+      }
+    });
+  }, []);
+
+  const activeCategory = categories[activeCategoryIndex] || categories[0] || SKILL_CATEGORIES[0];
 
   const getCategoryIcon = (index: number) => {
     switch (index) {
@@ -52,7 +64,7 @@ export const SkillsSection: React.FC = () => {
 
       {/* Blueprint Mode Tabs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {SKILL_CATEGORIES.map((cat, idx) => {
+        {categories.map((cat, idx) => {
           const isSelected = idx === activeCategoryIndex;
           return (
             <button

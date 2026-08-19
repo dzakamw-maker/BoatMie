@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ABOUT_DATA } from '@/data/dossierData';
+import { fetchProfile } from '@/lib/firestore';
 import { PaperClip } from '../common/PaperClip';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
@@ -17,6 +18,15 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
   onOpenProjects,
   onOpenContact,
 }) => {
+  const [about, setAbout] = useState(ABOUT_DATA);
+
+  useEffect(() => {
+    fetchProfile().then((data) => {
+      if (data && 'name' in data) {
+        setAbout(data as typeof ABOUT_DATA);
+      }
+    });
+  }, []);
   return (
     <div className="space-y-8 text-neutral-900">
       {/* Top Dossier Memo Header */}
@@ -50,11 +60,11 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
 
             {/* Avatar / Portrait Photo */}
             <div className="relative aspect-square w-full bg-gradient-to-br from-neutral-800 to-neutral-950 rounded-sm overflow-hidden flex flex-col items-center justify-center text-white text-center shadow-inner border border-neutral-700 group">
-              {ABOUT_DATA.avatarUrl ? (
+              {about.avatarUrl ? (
                 <div className="relative w-full h-full flex items-center justify-center">
                   <img
-                    src={ABOUT_DATA.avatarUrl}
-                    alt={ABOUT_DATA.name}
+                    src={about.avatarUrl}
+                    alt={about.name}
                     className="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-300"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = 'none';
@@ -66,9 +76,9 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     <div className="w-20 h-20 rounded-full bg-blue-600/20 border-2 border-blue-400 flex items-center justify-center mb-3 shadow-lg">
                       <Terminal className="w-10 h-10 text-blue-400" />
                     </div>
-                    <h3 className="font-sans text-xl font-black tracking-wider uppercase">{ABOUT_DATA.name}</h3>
+                    <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name}</h3>
                     <p className="font-mono text-[11px] text-blue-300 tracking-widest uppercase mt-0.5">
-                      {ABOUT_DATA.alias}
+                      {about.alias}
                     </p>
                   </div>
                 </div>
@@ -77,31 +87,30 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                   <div className="w-20 h-20 rounded-full bg-blue-600/20 border-2 border-blue-400 flex items-center justify-center mb-3 shadow-lg">
                     <Terminal className="w-10 h-10 text-blue-400" />
                   </div>
-                  <h3 className="font-sans text-xl font-black tracking-wider uppercase">{ABOUT_DATA.name}</h3>
+                  <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name}</h3>
                   <p className="font-mono text-[11px] text-blue-300 tracking-widest uppercase mt-0.5">
-                    {ABOUT_DATA.alias}
+                    {about.alias}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Typewriter Spec Data */}
-            <div className="mt-4 font-mono text-xs space-y-2 border-t border-neutral-200 pt-3">
-              <div className="flex justify-between">
-                <span className="text-neutral-500">DISCIPLINE:</span>
-                <span className="font-semibold text-neutral-800">PPLG / IT</span>
+            {/* Quick Summary Badge below photo */}
+            <div className="mt-4 pt-3 border-t border-neutral-200 font-mono text-[11px] space-y-1.5 text-neutral-600">
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 uppercase">Status:</span>
+                <span className="text-emerald-700 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Active
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-500">LOCATION:</span>
-                <span className="font-semibold text-neutral-800">West Java, ID</span>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 uppercase">Focus:</span>
+                <span className="text-neutral-900 font-bold">Full-Stack & Applied AI</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-500">TIMEZONE:</span>
-                <span className="font-semibold text-neutral-800">WIB (UTC+7)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-neutral-500">EXPERIENCE:</span>
-                <span className="font-semibold text-neutral-800">Web Ecosystem</span>
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 uppercase">Location:</span>
+                <span className="text-neutral-900">{about.location}</span>
               </div>
             </div>
           </div>
@@ -119,20 +128,20 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
               DZAKA
             </h1>
             <p className="font-mono text-sm sm:text-base text-blue-700 font-bold uppercase tracking-wider">
-              {ABOUT_DATA.role}
+              {about.role}
             </p>
           </div>
 
           {/* Lead Editorial Paragraph with Drop Cap */}
           <div className="prose prose-neutral max-w-none">
             <p className="font-serif text-lg sm:text-xl text-neutral-800 leading-relaxed drop-cap mb-4">
-              {ABOUT_DATA.bioParagraphs[0]}
+              {about.bioParagraphs[0]}
             </p>
             <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed mb-4">
-              {ABOUT_DATA.bioParagraphs[1]}
+              {about.bioParagraphs[1]}
             </p>
             <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed">
-              {ABOUT_DATA.bioParagraphs[2]}
+              {about.bioParagraphs[2]}
             </p>
           </div>
 
