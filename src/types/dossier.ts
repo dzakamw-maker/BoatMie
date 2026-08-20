@@ -64,4 +64,13 @@ export interface InterestItem {
   imageUrl?: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  category: string;
+  message: string;
+  is_read?: boolean;
+  created_at?: any;
+}
 

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { FOLDERS_CONFIG } from '@/data/dossierData';
 import { FolderId, FolderConfig } from '@/types/dossier';
 import { FolderTab } from './FolderTab';
@@ -185,8 +187,16 @@ export const FolderDeckView: React.FC<FolderDeckViewProps> = ({
         <div className="flex items-center gap-4">
           <span>BUILT WITH NEXT.JS & FRAMER MOTION</span>
           <span>ESTETIKA DOSSIER ARSIP</span>
+          <Link
+            href="/admin"
+            className="text-neutral-600 hover:text-neutral-300 transition-colors font-bold"
+            title="Classified Dossier Console"
+          >
+            [🔒 CLASSIFIED // ACCESS]
+          </Link>
         </div>
       </footer>
+
     </div>
   );
 };
