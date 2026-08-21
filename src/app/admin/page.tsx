@@ -84,7 +84,7 @@ export default function AdminPage() {
   const [editingInterestId, setEditingInterestId] = useState<string | null>(null);
 
   // --- Project Form State ---
-  const initialProjectForm: Partial<ProjectItem> & { techStackRaw?: string } = {
+  const initialProjectForm: Partial<ProjectItem> & { techStackRaw?: string; metricsRaw?: string; sortOrder?: number } = {
     id: '',
     title: '',
     subtitle: '',
@@ -95,13 +95,16 @@ export default function AdminPage() {
     repoUrl: '',
     liveUrl: '',
     imageUrl: '',
+    featured: false,
     date: '2026',
     status: 'Deployed',
+    metricsRaw: '',
+    sortOrder: 0,
   };
   const [projectForm, setProjectForm] = useState(initialProjectForm);
 
   // --- Certificate Form State ---
-  const initialCertForm: Partial<CertificateItem> & { skillsRaw?: string } = {
+  const initialCertForm: Partial<CertificateItem> & { skillsRaw?: string; sortOrder?: number } = {
     id: '',
     title: '',
     issuer: '',
@@ -112,20 +115,22 @@ export default function AdminPage() {
     skillsRaw: '',
     verificationUrl: '',
     imageUrl: '',
+    sortOrder: 0,
   };
   const [certForm, setCertForm] = useState(initialCertForm);
 
   // --- Skill Category Form State ---
-  const initialSkillForm: Partial<SkillCategory> & { skillsRaw?: string } = {
+  const initialSkillForm: Partial<SkillCategory> & { skillsRaw?: string; sortOrder?: number } = {
     title: '',
     code: 'SKILL-01',
     description: '',
     skillsRaw: '',
+    sortOrder: 0,
   };
   const [skillForm, setSkillForm] = useState(initialSkillForm);
 
   // --- Interest Form State ---
-  const initialInterestForm: Partial<InterestItem> & { detailsRaw?: string; fieldNotesRaw?: string } = {
+  const initialInterestForm: Partial<InterestItem> & { detailsRaw?: string; fieldNotesRaw?: string; sortOrder?: number } = {
     id: '',
     title: '',
     tagline: '',
@@ -134,6 +139,7 @@ export default function AdminPage() {
     content: '',
     detailsRaw: '',
     fieldNotesRaw: '',
+    sortOrder: 0,
   };
   const [interestForm, setInterestForm] = useState(initialInterestForm);
 
@@ -218,6 +224,13 @@ export default function AdminPage() {
       ? projectForm.techStackRaw.split(',').map((s) => s.trim()).filter(Boolean)
       : projectForm.techStack || [];
 
+    const metricsArray = projectForm.metricsRaw
+      ? projectForm.metricsRaw.split('\n').filter(Boolean).map((line) => {
+          const [label, value] = line.split('|').map((s) => s.trim());
+          return { label: label || '', value: value || '' };
+        })
+      : projectForm.metrics || [];
+
     const projectPayload: ProjectItem = {
       id: projectForm.id?.trim() || projectForm.title.toLowerCase().replace(/[^a-z0-9]/g, '-'),
       title: projectForm.title,
@@ -229,11 +242,13 @@ export default function AdminPage() {
       repoUrl: projectForm.repoUrl || '',
       liveUrl: projectForm.liveUrl || '',
       imageUrl: projectForm.imageUrl || '',
+      featured: projectForm.featured ?? false,
       date: projectForm.date || '2026',
+      metrics: metricsArray,
       status: (projectForm.status as 'Deployed' | 'Active Development' | 'Archived') || 'Deployed',
     };
 
-    const res = await saveProject(projectPayload);
+    const res = await saveProject({ ...projectPayload, sort_order: projectForm.sortOrder || 0 } as any);
     if (res.success) {
       showNotification('success', `Proyek "${projectPayload.title}" berhasil disimpan!`);
       setProjectForm(initialProjectForm);
@@ -250,6 +265,8 @@ export default function AdminPage() {
     setProjectForm({
       ...item,
       techStackRaw: item.techStack.join(', '),
+      metricsRaw: (item.metrics || []).map((m) => `${m.label} | ${m.value}`).join('\n'),
+      sortOrder: (item as any).sort_order || 0,
     });
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -295,7 +312,7 @@ export default function AdminPage() {
       imageUrl: certForm.imageUrl || '',
     };
 
-    const res = await saveCertificate(certPayload);
+    const res = await saveCertificate({ ...certPayload, sort_order: certForm.sortOrder || 0 } as any);
     if (res.success) {
       showNotification('success', `Sertifikat "${certPayload.title}" berhasil disimpan!`);
       setCertForm(initialCertForm);
@@ -312,6 +329,7 @@ export default function AdminPage() {
     setCertForm({
       ...item,
       skillsRaw: item.skills.join(', '),
+      sortOrder: (item as any).sort_order || 0,
     });
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -374,7 +392,7 @@ export default function AdminPage() {
       skills: parsedSkills,
     };
 
-    const res = await saveSkillCategory(skillPayload);
+    const res = await saveSkillCategory({ ...skillPayload, sort_order: skillForm.sortOrder || 0 } as any);
     if (res.success) {
       showNotification('success', `Kategori skill "${skillPayload.title}" berhasil disimpan!`);
       setSkillForm(initialSkillForm);
@@ -394,6 +412,7 @@ export default function AdminPage() {
     setSkillForm({
       ...item,
       skillsRaw,
+      sortOrder: (item as any).sort_order || 0,
     });
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -441,7 +460,7 @@ export default function AdminPage() {
       fieldNotes: fieldNotesArray,
     };
 
-    const res = await saveInterest(interestPayload);
+    const res = await saveInterest({ ...interestPayload, sort_order: interestForm.sortOrder || 0 } as any);
     if (res.success) {
       showNotification('success', `Catatan minat "${interestPayload.title}" berhasil disimpan!`);
       setInterestForm(initialInterestForm);
@@ -459,6 +478,7 @@ export default function AdminPage() {
       ...item,
       detailsRaw: item.details.join('\n'),
       fieldNotesRaw: item.fieldNotes.join('\n'),
+      sortOrder: (item as any).sort_order || 0,
     });
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
@@ -965,6 +985,47 @@ export default function AdminPage() {
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Metrics / Dampak Proyek (Label | Nilai, per baris)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={projectForm.metricsRaw || ''}
+                    onChange={(e) => setProjectForm({ ...projectForm, metricsRaw: e.target.value })}
+                    placeholder={"Response Time | < 200ms\nUptime | 99.9%\nUsers | 500+"}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-purple-500 focus:outline-hidden font-sans text-xs"
+                  />
+                  <p className="text-[10px] text-neutral-500">
+                    Format: Label | Nilai (satu per baris). Contoh: Response Time | {'<'} 200ms
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-neutral-400 font-bold uppercase">
+                      Urutan Tampil (Sort Order)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={projectForm.sortOrder || 0}
+                      onChange={(e) => setProjectForm({ ...projectForm, sortOrder: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-purple-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-3 cursor-pointer p-3 bg-neutral-900 border border-neutral-700 rounded hover:border-purple-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={projectForm.featured ?? false}
+                      onChange={(e) => setProjectForm({ ...projectForm, featured: e.target.checked })}
+                      className="w-4 h-4 accent-purple-500"
+                    />
+                    <span className="text-neutral-300 font-bold uppercase">Proyek Unggulan (Featured)</span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -1242,6 +1303,19 @@ export default function AdminPage() {
                     onChange={(e) => setCertForm({ ...certForm, description: e.target.value })}
                     placeholder="Penjelasan capaian, peringkat, atau materi yang diuji..."
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden font-sans text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Urutan Tampil (Sort Order)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={certForm.sortOrder || 0}
+                    onChange={(e) => setCertForm({ ...certForm, sortOrder: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
                   />
                 </div>
 
@@ -1531,6 +1605,124 @@ export default function AdminPage() {
                 />
               </div>
 
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Klasifikasi Dossier
+                </label>
+                <input
+                  type="text"
+                  value={profileData.classification || ''}
+                  onChange={(e) => setProfileData({ ...profileData, classification: e.target.value })}
+                  placeholder="e.g. UNRESTRICTED / PUBLIC DOSSIER"
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Bio Paragraf (1 paragraf per baris, pisahkan dengan Enter)
+                </label>
+                <textarea
+                  rows={5}
+                  value={(profileData.bioParagraphs || []).join('\n')}
+                  onChange={(e) => setProfileData({ ...profileData, bioParagraphs: e.target.value.split('\n') })}
+                  placeholder={"Paragraf pertama bio...\nParagraf kedua bio...\nParagraf ketiga bio..."}
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden font-sans text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Stats / Info Cards (Label | Nilai, per baris)
+                </label>
+                <textarea
+                  rows={4}
+                  value={(profileData.stats || []).map((s: any) => `${s.label} | ${s.value}`).join('\n')}
+                  onChange={(e) => setProfileData({
+                    ...profileData,
+                    stats: e.target.value.split('\n').filter(Boolean).map((line: string) => {
+                      const [label, value] = line.split('|').map((s: string) => s.trim());
+                      return { label: label || '', value: value || '' };
+                    }),
+                  })}
+                  placeholder={"Core Focus | Full-Stack Web & Applied AI\nAcademic Path | PPLG / Software Engineering"}
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden font-sans text-xs"
+                />
+                <p className="text-[10px] text-neutral-500">
+                  Format: Label | Nilai (satu per baris)
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Ketersediaan / Availability (Contact)
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.contact?.availability || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, availability: e.target.value },
+                      })
+                    }
+                    placeholder="Available for Web Projects, Fullstack Roles, ..."
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Lokasi Kontak (Contact)
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.contact?.location || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, location: e.target.value },
+                      })
+                    }
+                    placeholder="West Java, Indonesia"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Field Directive (Sticky Note di About)
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.fieldDirective || ''}
+                    onChange={(e) => setProfileData({ ...profileData, fieldDirective: e.target.value })}
+                    placeholder="Kutipan atau arahan yang tampil di About section"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Quick Memo (Quote di Contact)
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.contact?.quickMemo || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, quickMemo: e.target.value },
+                      })
+                    }
+                    placeholder="Kutipan singkat yang tampil di Contact section"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
 
               <button
                 type="submit"
@@ -1629,6 +1821,19 @@ export default function AdminPage() {
                   <p className="text-[10px] text-neutral-500">
                     Tulis 1 skill per baris dengan pemisah pipa (|). Contoh: <code>Next.js | Core | SSR, Routing</code>
                   </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Urutan Tampil (Sort Order)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={skillForm.sortOrder || 0}
+                    onChange={(e) => setSkillForm({ ...skillForm, sortOrder: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-emerald-500 focus:outline-hidden"
+                  />
                 </div>
 
                 <button
@@ -1859,6 +2064,19 @@ export default function AdminPage() {
                     onChange={(e) => setInterestForm({ ...interestForm, fieldNotesRaw: e.target.value })}
                     placeholder={`FIELD LOG: "Breakthroughs happen over coffee..."\nFAVORITE VIBES: Warm ambient lighting...`}
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-red-500 focus:outline-hidden font-sans text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Urutan Tampil (Sort Order)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={interestForm.sortOrder || 0}
+                    onChange={(e) => setInterestForm({ ...interestForm, sortOrder: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-red-500 focus:outline-hidden"
                   />
                 </div>
 
