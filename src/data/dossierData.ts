@@ -372,9 +372,10 @@ export const CERTIFICATES_DATA: CertificateItem[] = [
 
 export const CONTACT_DATA = {
   email: 'dzakamw@gmail.com',
-  github: 'https://github.com/dzakast',
-  linkedin: 'https://linkedin.com/in/dzakast',
-  instagram: 'https://instagram.com/dzakast',
+  github: 'https://github.com/dzakamw-maker',
+  linkedin: 'https://www.linkedin.com/in/dzaka/',
+  instagram: 'https://www.instagram.com/dzakaharja/',
   location: 'West Java, Indonesia',
   availability: 'Available for Web Projects, Fullstack Roles, & Live MC Bookings',
+  quickMemo: '"Inquiries regarding high-speed web applications, web development orders, or technology discussions will be received and responded to within 24 hours."',
 };

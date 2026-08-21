@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { ABOUT_DATA } from '@/data/dossierData';
-import { fetchProfile } from '@/lib/firestore';
+import { fetchAbout } from '@/lib/firestore';
+import { AboutData } from '@/types/dossier';
 import { PaperClip } from '../common/PaperClip';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
@@ -18,12 +19,12 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
   onOpenProjects,
   onOpenContact,
 }) => {
-  const [about, setAbout] = useState(ABOUT_DATA);
+  const [about, setAbout] = useState<AboutData>(ABOUT_DATA);
 
   useEffect(() => {
-    fetchProfile().then((data) => {
-      if (data && 'name' in data) {
-        setAbout(data as typeof ABOUT_DATA);
+    fetchAbout().then((data) => {
+      if (data && data.name) {
+        setAbout(data);
       }
     });
   }, []);
@@ -117,7 +118,8 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
 
           {/* Sticky Note: Personal Directive */}
           <StickyNote title="FIELD DIRECTIVE" color="yellow" rotate={-2}>
-            &quot;A clean, responsive interface is not an afterthought — it is the foundation of user trust. Build minimal, build durable, make it tactile.&quot;
+            {about.fieldDirective ||
+              '"A clean, responsive interface is not an afterthought — it is the foundation of user trust. Build minimal, build durable, make it tactile."'}
           </StickyNote>
         </div>
 

@@ -1462,6 +1462,63 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* Social Channels Coordinates */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    GitHub URL
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.contact?.github || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, github: e.target.value },
+                      })
+                    }
+                    placeholder="https://github.com/..."
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    LinkedIn URL
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.contact?.linkedin || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, linkedin: e.target.value },
+                      })
+                    }
+                    placeholder="https://linkedin.com/in/..."
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Instagram URL
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.contact?.instagram || ''}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        contact: { ...profileData.contact, instagram: e.target.value },
+                      })
+                    }
+                    placeholder="https://instagram.com/..."
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="block text-neutral-400 font-bold uppercase">
                   Ringkasan Kasus / Case Summary (About Me)
@@ -1473,6 +1530,7 @@ export default function AdminPage() {
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden font-sans text-xs"
                 />
               </div>
+
 
               <button
                 type="submit"

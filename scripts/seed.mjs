@@ -14,6 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 1. FILE-01: ABOUT ME
 const ABOUT_DATA = {
   name: 'Dzaka',
   alias: 'BoatMie Architect',
@@ -24,6 +25,8 @@ const ABOUT_DATA = {
   classification: 'UNRESTRICTED / PUBLIC DOSSIER',
   caseSummary:
     'Dzaka is an aspiring software engineer specializing in modern web ecosystem architecture, reactive user interfaces, and robust cloud services. Driven by a deep appreciation for tactile digital design, high-performance web standards, and developer experience.',
+  fieldDirective:
+    '"A clean, responsive interface is not an afterthought — it is the foundation of user trust. Build minimal, build durable, make it tactile."',
   stats: [
     { label: 'Core Focus', value: 'Full-Stack Web & Applied AI' },
     { label: 'Academic Path', value: 'PPLG / Software Engineering' },
@@ -37,15 +40,7 @@ const ABOUT_DATA = {
   ],
 };
 
-const CONTACT_DATA = {
-  email: 'dzakamw@gmail.com',
-  github: 'https://github.com/dzakast',
-  linkedin: 'https://linkedin.com/in/dzakast',
-  instagram: 'https://instagram.com/dzakast',
-  location: 'West Java, Indonesia',
-  availability: 'Available for Web Projects, Fullstack Roles, & Live MC Bookings',
-};
-
+// 2. FILE-02: INTERESTS
 const INTERESTS_DATA = [
   {
     id: 'nongkrong',
@@ -121,6 +116,7 @@ const INTERESTS_DATA = [
   },
 ];
 
+// 3. FILE-03: SKILLS
 const SKILL_CATEGORIES = [
   {
     title: 'Core Languages & Scripting',
@@ -186,6 +182,7 @@ const SKILL_CATEGORIES = [
   },
 ];
 
+// 4. FILE-04: PROJECTS
 const PROJECTS_DATA = [
   {
     id: 'acrepar',
@@ -273,6 +270,7 @@ const PROJECTS_DATA = [
   },
 ];
 
+// 5. FILE-05: CERTIFICATES
 const CERTIFICATES_DATA = [
   {
     id: 'isqo-olympiad',
@@ -324,58 +322,32 @@ const CERTIFICATES_DATA = [
   },
 ];
 
+// 6. FILE-06: CONTACT
+const CONTACT_DATA = {
+  email: 'dzakamw@gmail.com',
+  github: 'https://github.com/dzakamw-maker',
+  linkedin: 'https://www.linkedin.com/in/dzaka/',
+  instagram: 'https://www.instagram.com/dzakaharja/',
+  location: 'West Java, Indonesia',
+  availability: 'Available for Web Projects, Fullstack Roles, & Live MC Bookings',
+  quickMemo:
+    '"Inquiries regarding high-speed web applications, web development orders, or technology discussions will be received and responded to within 24 hours."',
+};
+
 async function runSeed() {
-  console.log('🚀 Starting Firestore Database Seeder for BoatMie...\n');
+  console.log('🚀 Starting 6-Table Firestore Seeder for BoatMie...\n');
 
   try {
-    // 1. Profile
-    console.log('📝 Seeding collection: profile/main ...');
-    await setDoc(doc(db, 'profile', 'main'), {
+    // 1. FILE-01: Table `about` (Doc: `main`)
+    console.log('📂 [1/6] FILE-01: Seeding table `about` (doc: main)...');
+    await setDoc(doc(db, 'about', 'main'), {
       ...ABOUT_DATA,
-      contact: CONTACT_DATA,
       updated_at: serverTimestamp(),
     });
-    console.log('  ✅ Profile seeded.');
+    console.log('  ✅ Table `about` ready.');
 
-    // 2. Projects
-    console.log('📁 Seeding collection: projects ...');
-    for (let i = 0; i < PROJECTS_DATA.length; i++) {
-      const proj = PROJECTS_DATA[i];
-      await setDoc(doc(db, 'projects', proj.id), {
-        ...proj,
-        sort_order: i + 1,
-        updated_at: serverTimestamp(),
-      });
-      console.log(`  ✅ [${i + 1}/${PROJECTS_DATA.length}] Project: ${proj.title}`);
-    }
-
-    // 3. Certificates
-    console.log('📜 Seeding collection: certificates ...');
-    for (let i = 0; i < CERTIFICATES_DATA.length; i++) {
-      const cert = CERTIFICATES_DATA[i];
-      await setDoc(doc(db, 'certificates', cert.id), {
-        ...cert,
-        sort_order: i + 1,
-        updated_at: serverTimestamp(),
-      });
-      console.log(`  ✅ [${i + 1}/${CERTIFICATES_DATA.length}] Certificate: ${cert.title}`);
-    }
-
-    // 4. Skills
-    console.log('🛠️  Seeding collection: skill_categories ...');
-    for (let i = 0; i < SKILL_CATEGORIES.length; i++) {
-      const cat = SKILL_CATEGORIES[i];
-      const docId = cat.code.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      await setDoc(doc(db, 'skill_categories', docId), {
-        ...cat,
-        sort_order: i + 1,
-        updated_at: serverTimestamp(),
-      });
-      console.log(`  ✅ [${i + 1}/${SKILL_CATEGORIES.length}] Skill Cat: ${cat.title}`);
-    }
-
-    // 5. Interests
-    console.log('🧭 Seeding collection: interests ...');
+    // 2. FILE-02: Table `interests`
+    console.log('📂 [2/6] FILE-02: Seeding table `interests`...');
     for (let i = 0; i < INTERESTS_DATA.length; i++) {
       const item = INTERESTS_DATA[i];
       await setDoc(doc(db, 'interests', item.id), {
@@ -383,10 +355,55 @@ async function runSeed() {
         sort_order: i + 1,
         updated_at: serverTimestamp(),
       });
-      console.log(`  ✅ [${i + 1}/${INTERESTS_DATA.length}] Interest: ${item.title}`);
+      console.log(`  ✅ Interest: ${item.title}`);
     }
 
-    console.log('\n🎉 SEMUA DATA BERHASIL DIBUAT & DI-SEED KE FIRESTORE!');
+    // 3. FILE-03: Table `skills`
+    console.log('📂 [3/6] FILE-03: Seeding table `skills`...');
+    for (let i = 0; i < SKILL_CATEGORIES.length; i++) {
+      const cat = SKILL_CATEGORIES[i];
+      const docId = cat.code.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      await setDoc(doc(db, 'skills', docId), {
+        ...cat,
+        sort_order: i + 1,
+        updated_at: serverTimestamp(),
+      });
+      console.log(`  ✅ Skill Category: ${cat.title}`);
+    }
+
+    // 4. FILE-04: Table `projects`
+    console.log('📂 [4/6] FILE-04: Seeding table `projects`...');
+    for (let i = 0; i < PROJECTS_DATA.length; i++) {
+      const proj = PROJECTS_DATA[i];
+      await setDoc(doc(db, 'projects', proj.id), {
+        ...proj,
+        sort_order: i + 1,
+        updated_at: serverTimestamp(),
+      });
+      console.log(`  ✅ Project: ${proj.title}`);
+    }
+
+    // 5. FILE-05: Table `certificates`
+    console.log('📂 [5/6] FILE-05: Seeding table `certificates`...');
+    for (let i = 0; i < CERTIFICATES_DATA.length; i++) {
+      const cert = CERTIFICATES_DATA[i];
+      await setDoc(doc(db, 'certificates', cert.id), {
+        ...cert,
+        sort_order: i + 1,
+        updated_at: serverTimestamp(),
+      });
+      console.log(`  ✅ Certificate: ${cert.title}`);
+    }
+
+    // 6. FILE-06: Table `contact` (Doc: `main`)
+    console.log('📂 [6/6] FILE-06: Seeding table `contact` (doc: main)...');
+    await setDoc(doc(db, 'contact', 'main'), {
+      ...CONTACT_DATA,
+      updated_at: serverTimestamp(),
+    });
+    console.log('  ✅ Table `contact` ready.');
+
+    console.log('\n🎉 SEMUA 6 TABEL BERHASIL DIBUAT & DISINKRONISASI KE FIRESTORE!');
     process.exit(0);
   } catch (err) {
     console.error('\n❌ ERROR SAAT SEEDING DATA:', err);

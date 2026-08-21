@@ -74,3 +74,28 @@ export interface ContactMessage {
   created_at?: any;
 }
 
+export interface ContactInfo {
+  email: string;
+  github: string;
+  linkedin: string;
+  instagram: string;
+  location: string;
+  availability: string;
+  quickMemo?: string;
+}
+
+export interface AboutData {
+  name: string;
+  alias: string;
+  avatarUrl: string;
+  role: string;
+  status: string;
+  location: string;
+  classification: string;
+  caseSummary: string;
+  stats: { label: string; value: string }[];
+  bioParagraphs: string[];
+  fieldDirective?: string;
+}
+
+

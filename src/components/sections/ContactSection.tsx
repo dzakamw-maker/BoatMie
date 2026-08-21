@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CONTACT_DATA } from '@/data/dossierData';
-import { submitMessage } from '@/lib/firestore';
+import { submitMessage, fetchContact } from '@/lib/firestore';
+import { ContactInfo } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
 import { Mail, Github, Linkedin, Instagram, Send, CheckCircle2, MapPin, Terminal, AlertCircle, ArrowUpRight } from 'lucide-react';
 
 export const ContactSection: React.FC = () => {
+  const [contact, setContact] = useState<ContactInfo>(CONTACT_DATA);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -20,6 +22,14 @@ export const ContactSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [honeypot, setHoneypot] = useState<string>('');
+
+  useEffect(() => {
+    fetchContact().then((data) => {
+      if (data && data.email) {
+        setContact(data);
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,28 +104,28 @@ export const ContactSection: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-red-400 shrink-0" />
-                <span className="text-neutral-300">{CONTACT_DATA.location}</span>
+                <span className="text-neutral-300">{contact.location}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-blue-400 shrink-0" />
                 <a
-                  href={`mailto:${CONTACT_DATA.email}`}
+                  href={`mailto:${contact.email}`}
                   className="text-neutral-300 hover:text-white underline underline-offset-2"
                 >
-                  {CONTACT_DATA.email}
+                  {contact.email}
                 </a>
               </div>
             </div>
 
             <div className="pt-2 text-[11px] text-emerald-400 border-t border-neutral-800">
-              STATUS: {CONTACT_DATA.availability}
+              STATUS: {contact.availability}
             </div>
           </div>
 
           {/* Social Channels List */}
           <div className="space-y-2 font-mono text-xs">
             <a
-              href="https://github.com/dzakamw-maker"
+              href={contact.github || 'https://github.com/dzakamw-maker'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-neutral-900 transition-colors shadow-2xs group"
@@ -131,7 +141,7 @@ export const ContactSection: React.FC = () => {
             </a>
 
             <a
-              href="https://www.linkedin.com/in/dzaka/"
+              href={contact.linkedin || 'https://www.linkedin.com/in/dzaka/'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-blue-600 transition-colors shadow-2xs group"
@@ -147,7 +157,7 @@ export const ContactSection: React.FC = () => {
             </a>
 
             <a
-              href="https://www.instagram.com/dzakaharja/"
+              href={contact.instagram || 'https://www.instagram.com/dzakaharja/'}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-pink-600 transition-colors shadow-2xs group"
@@ -164,7 +174,8 @@ export const ContactSection: React.FC = () => {
           </div>
 
           <StickyNote title="QUICK MEMO" color="green" rotate={-1}>
-            &quot;Inquiries regarding high-speed web applications, web development orders, or technology discussions will be received and responded to within 24 hours.&quot;
+            {contact.quickMemo ||
+              '"Inquiries regarding high-speed web applications, web development orders, or technology discussions will be received and responded to within 24 hours."'}
           </StickyNote>
         </div>
 
