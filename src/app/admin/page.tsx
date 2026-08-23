@@ -8,6 +8,8 @@ import {
   SkillCategory,
   InterestItem,
   ContactMessage,
+  AboutData,
+  ContactInfo,
 } from '@/types/dossier';
 import {
   fetchProjects,
@@ -22,8 +24,10 @@ import {
   fetchInterests,
   saveInterest,
   deleteInterest,
-  fetchProfile,
-  saveProfile,
+  fetchAbout,
+  saveAbout,
+  fetchContact,
+  saveContact,
   fetchMessagesAdmin,
   markMessageRead,
   deleteMessage,
@@ -63,17 +67,18 @@ import {
   Compass,
   X,
   Sparkles,
+  Send,
+  Mail,
 } from 'lucide-react';
-
-const DEFAULT_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || 'boatmie2026';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [pinInput, setPinInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'interests' | 'skills' | 'projects' | 'certificates' | 'messages' | 'database'
-  >('profile');
+    'about' | 'interests' | 'skills' | 'projects' | 'certificates' | 'contact' | 'messages' | 'database'
+  >('about');
 
   // Loading & notification states
   const [loading, setLoading] = useState(false);
@@ -85,7 +90,8 @@ export default function AdminPage() {
   const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([]);
   const [interests, setInterests] = useState<InterestItem[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [profileData, setProfileData] = useState<any>({ ...ABOUT_DATA, contact: CONTACT_DATA });
+  const [aboutData, setAboutData] = useState<AboutData>(ABOUT_DATA);
+  const [contactData, setContactData] = useState<ContactInfo>(CONTACT_DATA);
 
   // Editing states
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -156,8 +162,8 @@ export default function AdminPage() {
   // --- Preview Modal State ---
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<
-    'profile-about' | 'profile-contact' | 'interests' | 'skills' | 'projects' | 'certificates'
-  >('profile-about');
+    'about' | 'interests' | 'skills' | 'projects' | 'certificates' | 'contact'
+  >('about');
 
   // Handle ESC key to close preview modal
   useEffect(() => {
@@ -176,13 +182,13 @@ export default function AdminPage() {
     };
   }, [previewModalOpen]);
 
-  const handleOpenPreview = (tab?: 'profile-about' | 'profile-contact' | 'interests' | 'skills' | 'projects' | 'certificates') => {
+  const handleOpenPreview = (tab?: 'about' | 'interests' | 'skills' | 'projects' | 'certificates' | 'contact') => {
     if (tab) {
       setPreviewTab(tab);
     } else {
       switch (activeTab) {
-        case 'profile':
-          setPreviewTab('profile-about');
+        case 'about':
+          setPreviewTab('about');
           break;
         case 'interests':
           setPreviewTab('interests');
@@ -196,8 +202,11 @@ export default function AdminPage() {
         case 'certificates':
           setPreviewTab('certificates');
           break;
+        case 'contact':
+          setPreviewTab('contact');
+          break;
         default:
-          setPreviewTab('profile-about');
+          setPreviewTab('about');
           break;
       }
     }
@@ -206,10 +215,8 @@ export default function AdminPage() {
 
   const getPreviewFolderColor = (tab: string) => {
     switch (tab) {
-      case 'profile-about':
+      case 'about':
         return '#2563eb';
-      case 'profile-contact':
-        return '#475569';
       case 'interests':
         return '#dc2626';
       case 'skills':
@@ -218,6 +225,8 @@ export default function AdminPage() {
         return '#7c3aed';
       case 'certificates':
         return '#d97706';
+      case 'contact':
+        return '#334155';
       default:
         return '#2563eb';
     }
@@ -225,10 +234,8 @@ export default function AdminPage() {
 
   const getPreviewModalTitle = (tab: string) => {
     switch (tab) {
-      case 'profile-about':
+      case 'about':
         return 'DOSSIER #01 // ABOUT ME & PROFIL';
-      case 'profile-contact':
-        return 'DOSSIER #06 // TRANSMISI & KONTAK';
       case 'interests':
         return 'DOSSIER #02 // CATATAN LAPANGAN (INTERESTS)';
       case 'skills':
@@ -237,6 +244,8 @@ export default function AdminPage() {
         return 'DOSSIER #04 // KATALOG PROYEK (PROJECTS)';
       case 'certificates':
         return 'DOSSIER #05 // SERTIFIKAT & PENCAPAIAN';
+      case 'contact':
+        return 'DOSSIER #06 // TRANSMISI & KONTAK';
       default:
         return 'DOSSIER PRATINJAU';
     }
@@ -244,10 +253,8 @@ export default function AdminPage() {
 
   const getPreviewFolderIndex = (tab: string) => {
     switch (tab) {
-      case 'profile-about':
+      case 'about':
         return 'FILE-01';
-      case 'profile-contact':
-        return 'FILE-06';
       case 'interests':
         return 'FILE-02';
       case 'skills':
@@ -256,6 +263,8 @@ export default function AdminPage() {
         return 'FILE-04';
       case 'certificates':
         return 'FILE-05';
+      case 'contact':
+        return 'FILE-06';
       default:
         return 'FILE-01';
     }
@@ -263,10 +272,8 @@ export default function AdminPage() {
 
   const getPreviewFolderCategory = (tab: string) => {
     switch (tab) {
-      case 'profile-about':
+      case 'about':
         return 'IDENTIFIKASI AGEN // ABOUT ME';
-      case 'profile-contact':
-        return 'JARINGAN TRANSMISI // DIRECT MEMO';
       case 'interests':
         return 'OBSERVASI & MINAT // FIELD LOG';
       case 'skills':
@@ -275,28 +282,39 @@ export default function AdminPage() {
         return 'GALERI ARSIP KARYA // DEPLOYED';
       case 'certificates':
         return 'AKREDITASI & KREDENSIAL // OFFICIAL';
+      case 'contact':
+        return 'JARINGAN TRANSMISI // DIRECT MEMO';
       default:
         return 'DOSSIER';
     }
   };
 
   // Draft Data Constructors for real-time preview
-  const getDraftProfileData = () => {
-    const bioArray = Array.isArray(profileData.bioParagraphs)
-      ? profileData.bioParagraphs
-      : typeof profileData.bioParagraphs === 'string'
-      ? (profileData.bioParagraphs as string).split('\n')
+  const getDraftAboutData = () => {
+    const bioArray = Array.isArray(aboutData.bioParagraphs)
+      ? aboutData.bioParagraphs
+      : typeof aboutData.bioParagraphs === 'string'
+      ? (aboutData.bioParagraphs as string).split('\n')
       : [];
-    const statsArray = Array.isArray(profileData.stats) ? profileData.stats : [];
+    const statsArray = Array.isArray(aboutData.stats) ? aboutData.stats : [];
     return {
-      ...profileData,
-      bioParagraphs: bioArray.length > 0 ? bioArray : ABOUT_DATA.bioParagraphs,
+      ...aboutData,
+      name: aboutData.name || '',
+      alias: aboutData.alias || '',
+      avatarUrl: aboutData.avatarUrl || '',
+      role: aboutData.role || '',
+      status: aboutData.status || 'Active',
+      location: aboutData.location || '',
+      classification: aboutData.classification || 'IDENTIFICATION & CORE SUMMARY',
+      caseSummary: aboutData.caseSummary || '',
+      fieldDirective: aboutData.fieldDirective || '',
+      bioParagraphs: bioArray,
       stats: statsArray,
     };
   };
 
   const getDraftContactData = () => {
-    return profileData.contact || CONTACT_DATA;
+    return contactData || CONTACT_DATA;
   };
 
   const getDraftProjectsList = () => {
@@ -410,9 +428,9 @@ export default function AdminPage() {
 
   const renderPreviewContent = () => {
     switch (previewTab) {
-      case 'profile-about':
-        return <AboutSection previewData={getDraftProfileData()} />;
-      case 'profile-contact':
+      case 'about':
+        return <AboutSection previewData={getDraftAboutData()} />;
+      case 'contact':
         return <ContactSection previewContact={getDraftContactData()} />;
       case 'interests':
         return (
@@ -443,16 +461,21 @@ export default function AdminPage() {
           />
         );
       default:
-        return <AboutSection previewData={getDraftProfileData()} />;
+        return <AboutSection previewData={getDraftAboutData()} />;
     }
   };
 
-  // Check existing session
+  // Check existing session via secure server-side API (HttpOnly Cookie)
   useEffect(() => {
-    const sessionAuth = sessionStorage.getItem('boatmie_admin_auth');
-    if (sessionAuth === 'true') {
-      setIsAuthenticated(true);
-    }
+    fetch('/api/admin/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+        }
+      })
+      .catch((err) => console.error('Error verifying admin session:', err))
+      .finally(() => setCheckingSession(false));
   }, []);
 
   // Fetch data when authenticated
@@ -465,20 +488,24 @@ export default function AdminPage() {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [projData, certData, skillData, interestData, profData, msgData] = await Promise.all([
+      const [projData, certData, skillData, interestData, abData, conData, msgData] = await Promise.all([
         fetchProjects(),
         fetchCertificates(),
         fetchSkillCategories(),
         fetchInterests(),
-        fetchProfile(),
+        fetchAbout(),
+        fetchContact(),
         fetchMessagesAdmin(),
       ]);
       setProjects(projData || []);
       setCertificates(certData || []);
       setSkillCategories(skillData || []);
       setInterests(interestData || []);
-      if (profData) {
-        setProfileData(profData);
+      if (abData) {
+        setAboutData(abData);
+      }
+      if (conData) {
+        setContactData(conData);
       }
       setMessages(msgData || []);
     } catch (err) {
@@ -496,20 +523,41 @@ export default function AdminPage() {
     }, 4500);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === DEFAULT_PIN) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('boatmie_admin_auth', 'true');
-      setAuthError('');
-    } else {
-      setAuthError('Passcode otorisasi salah. Akses ditolak.');
+    setLoading(true);
+    setAuthError('');
+
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setPinInput('');
+        setAuthError('');
+      } else {
+        setAuthError(data.error || 'Passcode otorisasi salah. Akses ditolak.');
+      }
+    } catch (err) {
+      setAuthError('Gagal terhubung ke server otorisasi.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth', { method: 'DELETE' });
+    } catch (err) {
+      console.error('Error during logout:', err);
+    }
     setIsAuthenticated(false);
-    sessionStorage.removeItem('boatmie_admin_auth');
     setPinInput('');
   };
 
@@ -652,17 +700,33 @@ export default function AdminPage() {
   };
 
   // -------------------------------------------------------------
-  // HANDLERS: PROFILE
+  // HANDLERS: ABOUT ME (FILE-01)
   // -------------------------------------------------------------
-  const handleSaveProfile = async (e: React.FormEvent) => {
+  const handleSaveAbout = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const res = await saveProfile(profileData);
+    const res = await saveAbout(aboutData);
     if (res.success) {
-      showNotification('success', 'Data Profil & Kontak berhasil diperbarui!');
+      showNotification('success', 'Data Dossier About Me (#01) berhasil diperbarui!');
       await loadAllData();
     } else {
-      showNotification('error', res.error || 'Gagal menyimpan profil.');
+      showNotification('error', res.error || 'Gagal menyimpan data About Me.');
+    }
+    setLoading(false);
+  };
+
+  // -------------------------------------------------------------
+  // HANDLERS: CONTACT & SOCIALS (FILE-06)
+  // -------------------------------------------------------------
+  const handleSaveContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const res = await saveContact(contactData);
+    if (res.success) {
+      showNotification('success', 'Data Kontak & Sosmed (#06) berhasil diperbarui!');
+      await loadAllData();
+    } else {
+      showNotification('error', res.error || 'Gagal menyimpan data Kontak.');
     }
     setLoading(false);
   };
@@ -838,6 +902,17 @@ export default function AdminPage() {
   // -------------------------------------------------------------
   // RENDER: Lock Screen if not authenticated
   // -------------------------------------------------------------
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-[#0f1013] text-[#f4efe6] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3 font-mono text-xs text-neutral-400">
+          <RefreshCw className="w-5 h-5 animate-spin text-purple-400" />
+          <span>MEMVERIFIKASI OTORISASI SESI...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0f1013] text-[#f4efe6] flex items-center justify-center p-4 selection:bg-purple-600 selection:text-white">
@@ -992,15 +1067,15 @@ export default function AdminPage() {
         {/* Navigation Tabs — ordered to match Dossier FILE-01 through FILE-06 */}
         <div className="flex flex-wrap gap-2 border-b border-neutral-800 pb-3 font-mono text-xs">
           <button
-            onClick={() => setActiveTab('profile')}
+            onClick={() => setActiveTab('about')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
-              activeTab === 'profile'
+              activeTab === 'about'
                 ? 'bg-blue-900 text-white border-t-2 border-blue-400 shadow-md'
                 : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
             }`}
           >
             <User className="w-4 h-4" />
-            <span>Profil & Kontak</span>
+            <span>#01 About Me</span>
           </button>
 
           <button
@@ -1012,7 +1087,7 @@ export default function AdminPage() {
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Interests ({interests.length})</span>
+            <span>#02 Interests ({interests.length})</span>
           </button>
 
           <button
@@ -1024,7 +1099,7 @@ export default function AdminPage() {
             }`}
           >
             <Code2 className="w-4 h-4" />
-            <span>Skills ({skillCategories.length})</span>
+            <span>#03 Skills ({skillCategories.length})</span>
           </button>
 
           <button
@@ -1036,7 +1111,7 @@ export default function AdminPage() {
             }`}
           >
             <FolderGit2 className="w-4 h-4" />
-            <span>Katalog Proyek ({projects.length})</span>
+            <span>#04 Proyek ({projects.length})</span>
           </button>
 
           <button
@@ -1048,7 +1123,19 @@ export default function AdminPage() {
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>Sertifikat ({certificates.length})</span>
+            <span>#05 Sertifikat ({certificates.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('contact')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
+              activeTab === 'contact'
+                ? 'bg-slate-800 text-white border-t-2 border-slate-400 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            <span>#06 Kontak & Sosmed</span>
           </button>
 
           <button
@@ -1060,7 +1147,7 @@ export default function AdminPage() {
             }`}
           >
             <Inbox className="w-4 h-4" />
-            <span>Inbox Transmisi ({messages.filter((m) => !m.is_read).length} Baru)</span>
+            <span>Inbox Pesan ({messages.filter((m) => !m.is_read).length} Baru)</span>
           </button>
 
           <button
@@ -1763,43 +1850,32 @@ export default function AdminPage() {
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* TAB 3: PROFILE & IDENTITY MANAGEMENT */}
+        {/* TAB 1: FILE-01 ABOUT ME */}
         {/* ------------------------------------------------------------- */}
-        {activeTab === 'profile' && (
+        {activeTab === 'about' && (
           <div className="max-w-4xl bg-[#181920] p-6 sm:p-8 rounded-lg border border-neutral-800 shadow-xl space-y-6">
             <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-3">
               <div>
                 <h3 className="font-sans text-lg font-bold uppercase text-white flex items-center gap-2">
                   <User className="w-5 h-5 text-blue-400" />
-                  <span>IDENTITAS DOSSIER & KONTAK (ABOUT & CONTACT)</span>
+                  <span>DOSSIER #01 // IDENTIFIKASI AGEN (ABOUT ME)</span>
                 </h3>
                 <p className="font-serif text-xs text-neutral-400 mt-1">
-                  Data utama yang tampil pada tab Dossier #01 (About Me) dan Dossier #06 (Contact).
+                  Data utama identitas, bio editorial, directive sticky note, dan ringkasan kasus (Tabel <code>about</code>).
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenPreview('profile-about')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700 font-mono text-xs font-bold transition-all shadow-xs"
-                  title="Pratinjau Dossier #01: About Me"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Preview About (#01)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOpenPreview('profile-contact')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-xs font-bold transition-all shadow-xs"
-                  title="Pratinjau Dossier #06: Contact Memo"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Preview Contact (#06)</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenPreview('about')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700 font-mono text-xs font-bold transition-all shadow-xs"
+                title="Pratinjau Dossier #01: About Me"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Preview About (#01)</span>
+              </button>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-5 font-mono text-xs">
+            <form onSubmit={handleSaveAbout} className="space-y-5 font-mono text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">
@@ -1808,8 +1884,8 @@ export default function AdminPage() {
                   <input
                     type="text"
                     required
-                    value={profileData.name || ''}
-                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                    value={aboutData.name || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, name: e.target.value })}
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
@@ -1820,8 +1896,8 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="text"
-                    value={profileData.alias || ''}
-                    onChange={(e) => setProfileData({ ...profileData, alias: e.target.value })}
+                    value={aboutData.alias || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, alias: e.target.value })}
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
@@ -1834,18 +1910,18 @@ export default function AdminPage() {
                   <span>Link Foto Profil / Avatar (URL)</span>
                 </label>
                 <input
-                  type="url"
-                  value={profileData.avatarUrl || ''}
-                  onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
+                  type="text"
+                  value={aboutData.avatarUrl || ''}
+                  onChange={(e) => setAboutData({ ...aboutData, avatarUrl: e.target.value })}
                   placeholder="https://... atau /media/profile/avatar.png"
                   className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                 />
 
-                {profileData.avatarUrl && (
+                {aboutData.avatarUrl && (
                   <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-3">
                     <div className="w-14 h-14 bg-neutral-950 rounded-full border border-neutral-700 overflow-hidden shrink-0">
                       <img
-                        src={profileData.avatarUrl}
+                        src={aboutData.avatarUrl}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -1868,8 +1944,8 @@ export default function AdminPage() {
                   <input
                     type="text"
                     required
-                    value={profileData.role || ''}
-                    onChange={(e) => setProfileData({ ...profileData, role: e.target.value })}
+                    value={aboutData.role || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, role: e.target.value })}
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
@@ -1880,8 +1956,8 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="text"
-                    value={profileData.status || ''}
-                    onChange={(e) => setProfileData({ ...profileData, status: e.target.value })}
+                    value={aboutData.status || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, status: e.target.value })}
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
@@ -1890,89 +1966,42 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">
-                    Lokasi
+                    Lokasi Asal
                   </label>
                   <input
                     type="text"
-                    value={profileData.location || ''}
-                    onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
+                    value={aboutData.location || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, location: e.target.value })}
+                    placeholder="West Java, Indonesia (UTC+7)"
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">
-                    Email Kontak Utama
+                    Klasifikasi Dossier
                   </label>
                   <input
-                    type="email"
-                    value={profileData.contact?.email || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, email: e.target.value },
-                      })
-                    }
+                    type="text"
+                    value={aboutData.classification || ''}
+                    onChange={(e) => setAboutData({ ...aboutData, classification: e.target.value })}
+                    placeholder="e.g. UNRESTRICTED / PUBLIC DOSSIER"
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                   />
                 </div>
               </div>
 
-              {/* Social Channels Coordinates */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    GitHub URL
-                  </label>
-                  <input
-                    type="url"
-                    value={profileData.contact?.github || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, github: e.target.value },
-                      })
-                    }
-                    placeholder="https://github.com/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    LinkedIn URL
-                  </label>
-                  <input
-                    type="url"
-                    value={profileData.contact?.linkedin || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, linkedin: e.target.value },
-                      })
-                    }
-                    placeholder="https://linkedin.com/in/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Instagram URL
-                  </label>
-                  <input
-                    type="url"
-                    value={profileData.contact?.instagram || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, instagram: e.target.value },
-                      })
-                    }
-                    placeholder="https://instagram.com/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Field Directive (Sticky Note di About Me)
+                </label>
+                <input
+                  type="text"
+                  value={aboutData.fieldDirective || ''}
+                  onChange={(e) => setAboutData({ ...aboutData, fieldDirective: e.target.value })}
+                  placeholder="Kutipan atau arahan kerja yang tampil pada sticky note kuning di About"
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -1981,22 +2010,9 @@ export default function AdminPage() {
                 </label>
                 <textarea
                   rows={3}
-                  value={profileData.caseSummary || ''}
-                  onChange={(e) => setProfileData({ ...profileData, caseSummary: e.target.value })}
+                  value={aboutData.caseSummary || ''}
+                  onChange={(e) => setAboutData({ ...aboutData, caseSummary: e.target.value })}
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden font-sans text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-neutral-400 font-bold uppercase">
-                  Klasifikasi Dossier
-                </label>
-                <input
-                  type="text"
-                  value={profileData.classification || ''}
-                  onChange={(e) => setProfileData({ ...profileData, classification: e.target.value })}
-                  placeholder="e.g. UNRESTRICTED / PUBLIC DOSSIER"
-                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
                 />
               </div>
 
@@ -2006,8 +2022,8 @@ export default function AdminPage() {
                 </label>
                 <textarea
                   rows={5}
-                  value={(profileData.bioParagraphs || []).join('\n')}
-                  onChange={(e) => setProfileData({ ...profileData, bioParagraphs: e.target.value.split('\n') })}
+                  value={(aboutData.bioParagraphs || []).join('\n')}
+                  onChange={(e) => setAboutData({ ...aboutData, bioParagraphs: e.target.value.split('\n') })}
                   placeholder={"Paragraf pertama bio...\nParagraf kedua bio...\nParagraf ketiga bio..."}
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden font-sans text-xs"
                 />
@@ -2019,9 +2035,9 @@ export default function AdminPage() {
                 </label>
                 <textarea
                   rows={4}
-                  value={(profileData.stats || []).map((s: any) => `${s.label} | ${s.value}`).join('\n')}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
+                  value={(aboutData.stats || []).map((s: any) => `${s.label} | ${s.value}`).join('\n')}
+                  onChange={(e) => setAboutData({
+                    ...aboutData,
                     stats: e.target.value.split('\n').filter(Boolean).map((line: string) => {
                       const [label, value] = line.split('|').map((s: string) => s.trim());
                       return { label: label || '', value: value || '' };
@@ -2035,77 +2051,6 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Ketersediaan / Availability (Contact)
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.contact?.availability || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, availability: e.target.value },
-                      })
-                    }
-                    placeholder="Available for Web Projects, Fullstack Roles, ..."
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Lokasi Kontak (Contact)
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.contact?.location || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, location: e.target.value },
-                      })
-                    }
-                    placeholder="West Java, Indonesia"
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Field Directive (Sticky Note di About)
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.fieldDirective || ''}
-                    onChange={(e) => setProfileData({ ...profileData, fieldDirective: e.target.value })}
-                    placeholder="Kutipan atau arahan yang tampil di About section"
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Quick Memo (Quote di Contact)
-                  </label>
-                  <input
-                    type="text"
-                    value={profileData.contact?.quickMemo || ''}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        contact: { ...profileData.contact, quickMemo: e.target.value },
-                      })
-                    }
-                    placeholder="Kutipan singkat yang tampil di Contact section"
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                  />
-                </div>
-              </div>
-
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
                 <button
                   type="submit"
@@ -2113,28 +2058,169 @@ export default function AdminPage() {
                   className="w-full sm:flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>SIMPAN PERUBAHAN PROFIL & KONTAK</span>
+                  <span>SIMPAN PERUBAHAN ABOUT ME (#01)</span>
                 </button>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPreview('profile-about')}
-                    className="flex-1 sm:flex-initial px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-blue-300 font-bold uppercase rounded border border-neutral-700 hover:border-blue-600 transition-all flex items-center justify-center gap-2"
-                    title="Pratinjau Dossier #01: About Me"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Preview About</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPreview('profile-contact')}
-                    className="flex-1 sm:flex-initial px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-slate-300 font-bold uppercase rounded border border-neutral-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2"
-                    title="Pratinjau Dossier #06: Contact Memo"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Preview Contact</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenPreview('about')}
+                  className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-blue-300 font-bold uppercase rounded border border-neutral-700 hover:border-blue-600 transition-all flex items-center justify-center gap-2"
+                  title="Pratinjau Dossier #01: About Me"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview About</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* TAB 6: FILE-06 CONTACT & SOCIALS */}
+        {/* ------------------------------------------------------------- */}
+        {activeTab === 'contact' && (
+          <div className="max-w-4xl bg-[#181920] p-6 sm:p-8 rounded-lg border border-neutral-800 shadow-xl space-y-6">
+            <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+              <div>
+                <h3 className="font-sans text-lg font-bold uppercase text-white flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-slate-400" />
+                  <span>DOSSIER #06 // TRANSMISI & KONTAK (CONTACT)</span>
+                </h3>
+                <p className="font-serif text-xs text-neutral-400 mt-1">
+                  Koordinat email, tautan profil sosial media, status availability, dan memo transmisi (Tabel <code>contact</code>).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenPreview('contact')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-xs font-bold transition-all shadow-xs"
+                title="Pratinjau Dossier #06: Contact Memo"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Preview Contact (#06)</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveContact} className="space-y-5 font-mono text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Email Kontak Utama *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={contactData.email || ''}
+                    onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                  />
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-neutral-400 font-bold uppercase">
+                    Lokasi Kontak / Base
+                  </label>
+                  <input
+                    type="text"
+                    value={contactData.location || ''}
+                    onChange={(e) => setContactData({ ...contactData, location: e.target.value })}
+                    placeholder="West Java, Indonesia"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Status Ketersediaan Kolaborasi (Availability)
+                </label>
+                <input
+                  type="text"
+                  value={contactData.availability || ''}
+                  onChange={(e) => setContactData({ ...contactData, availability: e.target.value })}
+                  placeholder="Available for Web Projects, Fullstack Roles, & Live MC Bookings"
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-neutral-400 font-bold uppercase">
+                  Quick Memo (Sticky Note Transmisi di Contact)
+                </label>
+                <textarea
+                  rows={3}
+                  value={contactData.quickMemo || ''}
+                  onChange={(e) => setContactData({ ...contactData, quickMemo: e.target.value })}
+                  placeholder="Kutipan atau catatan singkat yang tampil di Contact section"
+                  className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden font-sans text-xs"
+                />
+              </div>
+
+              {/* Social Channels Coordinates */}
+              <div className="space-y-3 p-4 bg-neutral-900/80 rounded border border-neutral-800">
+                <span className="font-bold text-slate-300 uppercase tracking-wider block border-b border-neutral-800 pb-2">
+                  Tautan Sosial Media & Saluran Eksternal
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-neutral-400 font-bold uppercase">
+                      GitHub URL
+                    </label>
+                    <input
+                      type="url"
+                      value={contactData.github || ''}
+                      onChange={(e) => setContactData({ ...contactData, github: e.target.value })}
+                      placeholder="https://github.com/..."
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-neutral-400 font-bold uppercase">
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      value={contactData.linkedin || ''}
+                      onChange={(e) => setContactData({ ...contactData, linkedin: e.target.value })}
+                      placeholder="https://linkedin.com/in/..."
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-neutral-400 font-bold uppercase">
+                      Instagram URL
+                    </label>
+                    <input
+                      type="url"
+                      value={contactData.instagram || ''}
+                      onChange={(e) => setContactData({ ...contactData, instagram: e.target.value })}
+                      placeholder="https://instagram.com/..."
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-slate-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full sm:flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>SIMPAN PERUBAHAN KONTAK (#06)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenPreview('contact')}
+                  className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-slate-300 font-bold uppercase rounded border border-neutral-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2"
+                  title="Pratinjau Dossier #06: Contact Memo"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Contact</span>
+                </button>
               </div>
             </form>
           </div>
@@ -2754,31 +2840,69 @@ export default function AdminPage() {
                 </span>
               </div>
 
-              {/* Profile & Contact Sub-Tab Toggles */}
-              {(previewTab === 'profile-about' || previewTab === 'profile-contact') && (
-                <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded border border-neutral-800 font-mono text-xs">
-                  <button
-                    onClick={() => setPreviewTab('profile-about')}
-                    className={`px-3 py-1 rounded transition-colors font-bold uppercase ${
-                      previewTab === 'profile-about'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    Dossier #01: About
-                  </button>
-                  <button
-                    onClick={() => setPreviewTab('profile-contact')}
-                    className={`px-3 py-1 rounded transition-colors font-bold uppercase ${
-                      previewTab === 'profile-contact'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    Dossier #06: Contact
-                  </button>
-                </div>
-              )}
+              {/* 6-File Dossier Selector Toggles in Preview Modal */}
+              <div className="flex flex-wrap items-center gap-1 bg-neutral-900 p-1 rounded border border-neutral-800 font-mono text-[11px]">
+                <button
+                  onClick={() => setPreviewTab('about')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'about'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #01 About
+                </button>
+                <button
+                  onClick={() => setPreviewTab('interests')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'interests'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #02 Interests
+                </button>
+                <button
+                  onClick={() => setPreviewTab('skills')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'skills'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #03 Skills
+                </button>
+                <button
+                  onClick={() => setPreviewTab('projects')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'projects'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #04 Projects
+                </button>
+                <button
+                  onClick={() => setPreviewTab('certificates')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'certificates'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #05 Certs
+                </button>
+                <button
+                  onClick={() => setPreviewTab('contact')}
+                  className={`px-2.5 py-1 rounded transition-colors font-bold uppercase ${
+                    previewTab === 'contact'
+                      ? 'bg-slate-600 text-white shadow-xs'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  #06 Contact
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button

@@ -42,7 +42,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
           <span className="font-bold tracking-widest text-blue-800 bg-blue-100 px-2 py-0.5 rounded">
             DOSSIER #01
           </span>
-          <span className="text-neutral-500">SUBJECT: IDENTIFICATION & CORE SUMMARY</span>
+          <span className="text-neutral-500">SUBJECT: {about.classification || 'IDENTIFICATION & CORE SUMMARY'}</span>
         </div>
         <div className="flex items-center gap-2">
           <StampBadge text="AUTHENTIC RECORD" variant="blue" rotate={-1} />
@@ -71,7 +71,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                 <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={about.avatarUrl}
-                    alt={about.name}
+                    alt={about.name || 'Avatar'}
                     className="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-300"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = 'none';
@@ -83,7 +83,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     <div className="w-20 h-20 rounded-full bg-blue-600/20 border-2 border-blue-400 flex items-center justify-center mb-3 shadow-lg">
                       <Terminal className="w-10 h-10 text-blue-400" />
                     </div>
-                    <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name}</h3>
+                    <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name || 'DZAKA'}</h3>
                     <p className="font-mono text-[11px] text-blue-300 tracking-widest uppercase mt-0.5">
                       {about.alias}
                     </p>
@@ -94,7 +94,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                   <div className="w-20 h-20 rounded-full bg-blue-600/20 border-2 border-blue-400 flex items-center justify-center mb-3 shadow-lg">
                     <Terminal className="w-10 h-10 text-blue-400" />
                   </div>
-                  <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name}</h3>
+                  <h3 className="font-sans text-xl font-black tracking-wider uppercase">{about.name || 'DZAKA'}</h3>
                   <p className="font-mono text-[11px] text-blue-300 tracking-widest uppercase mt-0.5">
                     {about.alias}
                   </p>
@@ -103,22 +103,63 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
             </div>
 
             {/* Quick Summary Badge below photo */}
-            <div className="mt-4 pt-3 border-t border-neutral-200 font-mono text-[11px] space-y-1.5 text-neutral-600">
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 uppercase">Status:</span>
-                <span className="text-emerald-700 font-bold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Active
+            <div className="mt-4 pt-3 border-t border-neutral-200 font-mono text-[11px] space-y-2.5 text-neutral-700">
+              {about.alias && (
+                <div className="flex items-center justify-between gap-2 pb-2 border-b border-neutral-100">
+                  <span className="text-neutral-400 uppercase tracking-wider text-[10px] font-medium shrink-0">
+                    CALLSIGN
+                  </span>
+                  <span className="text-blue-700 font-bold tracking-wide uppercase text-right truncate">
+                    {about.alias}
+                  </span>
+                </div>
+              )}
+
+              {/* Status Row with clean badge */}
+              <div className="space-y-1 pb-2 border-b border-neutral-100">
+                <span className="text-neutral-400 uppercase tracking-wider text-[10px] font-medium block">
+                  STATUS
                 </span>
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs bg-emerald-50/80 px-2.5 py-1.5 rounded border border-emerald-200 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  <span className="leading-snug">{about.status || 'Active'}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 uppercase">Focus:</span>
-                <span className="text-neutral-900 font-bold">Full-Stack & Applied AI</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 uppercase">Location:</span>
-                <span className="text-neutral-900">{about.location}</span>
-              </div>
+
+              {/* Stats / Metadata List */}
+              {about.stats && about.stats.length > 0 ? (
+                <div className="space-y-2.5 pt-0.5">
+                  {about.stats.map((stat, idx) => (
+                    <div key={idx} className="space-y-0.5">
+                      <span className="text-neutral-400 uppercase tracking-wider text-[10px] font-medium block">
+                        {stat.label}
+                      </span>
+                      <span className="text-neutral-900 font-semibold text-xs leading-snug block">
+                        {stat.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2.5 pt-0.5">
+                  <div className="space-y-0.5">
+                    <span className="text-neutral-400 uppercase tracking-wider text-[10px] font-medium block">
+                      FOCUS
+                    </span>
+                    <span className="text-neutral-900 font-semibold text-xs leading-snug block">
+                      {about.caseSummary || 'Full-Stack & Applied AI'}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-neutral-400 uppercase tracking-wider text-[10px] font-medium block">
+                      LOCATION
+                    </span>
+                    <span className="text-neutral-900 font-semibold text-xs leading-snug block">
+                      {about.location}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -132,32 +173,39 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
         {/* Right Column: Editorial Bio & Focus Areas (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           <div>
+            {about.alias && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-xs font-bold uppercase tracking-widest border border-blue-300 mb-2">
+                <span>CALLSIGN / ALIAS:</span>
+                <span className="text-blue-700 font-black">{about.alias}</span>
+              </div>
+            )}
             <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl uppercase tracking-wide text-neutral-950 leading-none mb-3">
-              DZAKA
+              {about.name || 'DZAKA'}
             </h1>
             <p className="font-mono text-sm sm:text-base text-blue-700 font-bold uppercase tracking-wider">
               {about.role}
             </p>
+            {about.caseSummary && (
+              <p className="font-serif text-sm text-neutral-600 italic mt-1">
+                {about.caseSummary}
+              </p>
+            )}
           </div>
 
           {/* Lead Editorial Paragraph with Drop Cap */}
           <div className="prose prose-neutral max-w-none">
-            {about.bioParagraphs?.[0] && (
-              <p className="font-serif text-lg sm:text-xl text-neutral-800 leading-relaxed drop-cap mb-4">
-                {about.bioParagraphs[0]}
-              </p>
-            )}
-            {about.bioParagraphs?.[1] && (
-              <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed mb-4">
-                {about.bioParagraphs[1]}
-              </p>
-            )}
-            {about.bioParagraphs?.[2] && (
-              <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed">
-                {about.bioParagraphs[2]}
-              </p>
-            )}
-            {(!about.bioParagraphs || about.bioParagraphs.length === 0) && (
+            {about.bioParagraphs && about.bioParagraphs.length > 0 ? (
+              about.bioParagraphs.map((para, idx) => (
+                <p
+                  key={idx}
+                  className={`font-serif leading-relaxed mb-4 ${
+                    idx === 0 ? 'text-lg sm:text-xl text-neutral-800 drop-cap' : 'text-base sm:text-lg text-neutral-700'
+                  }`}
+                >
+                  {para}
+                </p>
+              ))
+            ) : (
               <p className="font-serif text-base sm:text-lg text-neutral-500 italic">
                 Belum ada paragraf bio yang dimasukkan.
               </p>
