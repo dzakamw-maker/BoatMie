@@ -92,6 +92,7 @@ export async function fetchInterests(): Promise<InterestItem[]> {
           content: d.content || '',
           details: d.details || [],
           fieldNotes: d.fieldNotes || d.field_notes || [],
+          sort_order: d.sort_order ?? 0,
         } as InterestItem;
       });
     }
@@ -198,6 +199,7 @@ export async function fetchProjects(): Promise<ProjectItem[]> {
           date: d.date || '',
           metrics: d.metrics || [],
           status: d.status || 'Deployed',
+          sort_order: d.sort_order ?? 0,
         } as ProjectItem;
       });
     }
@@ -255,6 +257,7 @@ export async function fetchCertificates(): Promise<CertificateItem[]> {
           skills: d.skills || [],
           verificationUrl: d.verificationUrl || d.verification_url || '',
           imageUrl: d.imageUrl || d.image_url || '',
+          sort_order: d.sort_order ?? 0,
         } as CertificateItem;
       });
     }

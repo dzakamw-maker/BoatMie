@@ -62,8 +62,8 @@ export default function AdminPage() {
   const [pinInput, setPinInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<
-    'projects' | 'certificates' | 'profile' | 'skills' | 'interests' | 'messages' | 'database'
-  >('projects');
+    'profile' | 'interests' | 'skills' | 'projects' | 'certificates' | 'messages' | 'database'
+  >('profile');
 
   // Loading & notification states
   const [loading, setLoading] = useState(false);
@@ -673,8 +673,44 @@ export default function AdminPage() {
 
       {/* Main Admin Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs — ordered to match Dossier FILE-01 through FILE-06 */}
         <div className="flex flex-wrap gap-2 border-b border-neutral-800 pb-3 font-mono text-xs">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
+              activeTab === 'profile'
+                ? 'bg-blue-900 text-white border-t-2 border-blue-400 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Profil & Kontak</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('interests')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
+              activeTab === 'interests'
+                ? 'bg-red-900 text-white border-t-2 border-red-400 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>Interests ({interests.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('skills')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
+              activeTab === 'skills'
+                ? 'bg-emerald-900 text-white border-t-2 border-emerald-400 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
+            }`}
+          >
+            <Code2 className="w-4 h-4" />
+            <span>Skills ({skillCategories.length})</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('projects')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
@@ -697,42 +733,6 @@ export default function AdminPage() {
           >
             <Award className="w-4 h-4" />
             <span>Sertifikat ({certificates.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
-              activeTab === 'profile'
-                ? 'bg-blue-900 text-white border-t-2 border-blue-400 shadow-md'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            <span>Profil & Kontak</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('skills')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
-              activeTab === 'skills'
-                ? 'bg-emerald-900 text-white border-t-2 border-emerald-400 shadow-md'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
-            }`}
-          >
-            <Code2 className="w-4 h-4" />
-            <span>Skills ({skillCategories.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('interests')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-md font-bold uppercase transition-all ${
-              activeTab === 'interests'
-                ? 'bg-red-900 text-white border-t-2 border-red-400 shadow-md'
-                : 'bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            <span>Interests ({interests.length})</span>
           </button>
 
           <button
