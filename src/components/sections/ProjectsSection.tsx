@@ -20,20 +20,40 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-export const ProjectsSection: React.FC = () => {
-  const [projects, setProjects] = useState<ProjectItem[]>(PROJECTS_DATA);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(PROJECTS_DATA[0].id);
+interface ProjectsSectionProps {
+  previewProjects?: ProjectItem[];
+  initialSelectedId?: string;
+}
+
+export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
+  previewProjects,
+  initialSelectedId,
+}) => {
+  const [projects, setProjects] = useState<ProjectItem[]>(previewProjects || PROJECTS_DATA);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    initialSelectedId || previewProjects?.[0]?.id || PROJECTS_DATA[0].id
+  );
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
 
   useEffect(() => {
+    if (previewProjects) {
+      setProjects(previewProjects);
+      if (initialSelectedId) {
+        setSelectedProjectId(initialSelectedId);
+      } else if (previewProjects.length > 0 && !previewProjects.some((p) => p.id === selectedProjectId)) {
+        setSelectedProjectId(previewProjects[0].id);
+      }
+      return;
+    }
     fetchProjects().then((data) => {
       if (data && data.length > 0) {
         setProjects(data);
+        if (!selectedProjectId) setSelectedProjectId(data[0].id);
       }
     });
-  }, []);
+  }, [previewProjects, initialSelectedId]);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0] || PROJECTS_DATA[0];
 
@@ -260,7 +280,7 @@ export const ProjectsSection: React.FC = () => {
                 INTEGRATED STACK
               </h5>
               <div className="flex flex-wrap gap-2">
-                {selectedProject.techStack.map((tech) => (
+                {(selectedProject.techStack || []).map((tech) => (
                   <span
                     key={tech}
                     className="font-mono text-xs px-2.5 py-1 rounded bg-white text-purple-900 border border-purple-200 font-semibold shadow-2xs"
@@ -271,7 +291,7 @@ export const ProjectsSection: React.FC = () => {
               </div>
             </div>
 
-            {selectedProject.metrics && (
+            {selectedProject.metrics && selectedProject.metrics.length > 0 && (
               <div className="pt-3 border-t border-neutral-200">
                 <h5 className="font-mono text-xs font-bold uppercase tracking-wider text-neutral-700 mb-3">
                   FIELD IMPACT & METRICS

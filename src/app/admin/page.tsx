@@ -33,6 +33,14 @@ import {
   ABOUT_DATA,
   CONTACT_DATA,
 } from '@/data/dossierData';
+import { AboutSection } from '@/components/sections/AboutSection';
+import { InterestsSection } from '@/components/sections/InterestsSection';
+import { SkillsSection } from '@/components/sections/SkillsSection';
+import { ProjectsSection } from '@/components/sections/ProjectsSection';
+import { CertificatesSection } from '@/components/sections/CertificatesSection';
+import { ContactSection } from '@/components/sections/ContactSection';
+import { BinderHoles } from '@/components/common/BinderHoles';
+import { PaperClip } from '@/components/common/PaperClip';
 import {
   Unlock,
   FolderGit2,
@@ -53,6 +61,8 @@ import {
   User,
   Code2,
   Compass,
+  X,
+  Sparkles,
 } from 'lucide-react';
 
 const DEFAULT_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || 'boatmie2026';
@@ -142,6 +152,300 @@ export default function AdminPage() {
     sortOrder: 0,
   };
   const [interestForm, setInterestForm] = useState(initialInterestForm);
+
+  // --- Preview Modal State ---
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState<
+    'profile-about' | 'profile-contact' | 'interests' | 'skills' | 'projects' | 'certificates'
+  >('profile-about');
+
+  // Handle ESC key to close preview modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && previewModalOpen) {
+        setPreviewModalOpen(false);
+      }
+    };
+    if (previewModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [previewModalOpen]);
+
+  const handleOpenPreview = (tab?: 'profile-about' | 'profile-contact' | 'interests' | 'skills' | 'projects' | 'certificates') => {
+    if (tab) {
+      setPreviewTab(tab);
+    } else {
+      switch (activeTab) {
+        case 'profile':
+          setPreviewTab('profile-about');
+          break;
+        case 'interests':
+          setPreviewTab('interests');
+          break;
+        case 'skills':
+          setPreviewTab('skills');
+          break;
+        case 'projects':
+          setPreviewTab('projects');
+          break;
+        case 'certificates':
+          setPreviewTab('certificates');
+          break;
+        default:
+          setPreviewTab('profile-about');
+          break;
+      }
+    }
+    setPreviewModalOpen(true);
+  };
+
+  const getPreviewFolderColor = (tab: string) => {
+    switch (tab) {
+      case 'profile-about':
+        return '#2563eb';
+      case 'profile-contact':
+        return '#475569';
+      case 'interests':
+        return '#dc2626';
+      case 'skills':
+        return '#059669';
+      case 'projects':
+        return '#7c3aed';
+      case 'certificates':
+        return '#d97706';
+      default:
+        return '#2563eb';
+    }
+  };
+
+  const getPreviewModalTitle = (tab: string) => {
+    switch (tab) {
+      case 'profile-about':
+        return 'DOSSIER #01 // ABOUT ME & PROFIL';
+      case 'profile-contact':
+        return 'DOSSIER #06 // TRANSMISI & KONTAK';
+      case 'interests':
+        return 'DOSSIER #02 // CATATAN LAPANGAN (INTERESTS)';
+      case 'skills':
+        return 'DOSSIER #03 // CETAK BIRU TEKNIS (SKILLS)';
+      case 'projects':
+        return 'DOSSIER #04 // KATALOG PROYEK (PROJECTS)';
+      case 'certificates':
+        return 'DOSSIER #05 // SERTIFIKAT & PENCAPAIAN';
+      default:
+        return 'DOSSIER PRATINJAU';
+    }
+  };
+
+  const getPreviewFolderIndex = (tab: string) => {
+    switch (tab) {
+      case 'profile-about':
+        return 'FILE-01';
+      case 'profile-contact':
+        return 'FILE-06';
+      case 'interests':
+        return 'FILE-02';
+      case 'skills':
+        return 'FILE-03';
+      case 'projects':
+        return 'FILE-04';
+      case 'certificates':
+        return 'FILE-05';
+      default:
+        return 'FILE-01';
+    }
+  };
+
+  const getPreviewFolderCategory = (tab: string) => {
+    switch (tab) {
+      case 'profile-about':
+        return 'IDENTIFIKASI AGEN // ABOUT ME';
+      case 'profile-contact':
+        return 'JARINGAN TRANSMISI // DIRECT MEMO';
+      case 'interests':
+        return 'OBSERVASI & MINAT // FIELD LOG';
+      case 'skills':
+        return 'CETAK BIRU TEKNIS // SPEC-VERIFIED';
+      case 'projects':
+        return 'GALERI ARSIP KARYA // DEPLOYED';
+      case 'certificates':
+        return 'AKREDITASI & KREDENSIAL // OFFICIAL';
+      default:
+        return 'DOSSIER';
+    }
+  };
+
+  // Draft Data Constructors for real-time preview
+  const getDraftProfileData = () => {
+    const bioArray = Array.isArray(profileData.bioParagraphs)
+      ? profileData.bioParagraphs
+      : typeof profileData.bioParagraphs === 'string'
+      ? (profileData.bioParagraphs as string).split('\n')
+      : [];
+    const statsArray = Array.isArray(profileData.stats) ? profileData.stats : [];
+    return {
+      ...profileData,
+      bioParagraphs: bioArray.length > 0 ? bioArray : ABOUT_DATA.bioParagraphs,
+      stats: statsArray,
+    };
+  };
+
+  const getDraftContactData = () => {
+    return profileData.contact || CONTACT_DATA;
+  };
+
+  const getDraftProjectsList = () => {
+    const techArray = projectForm.techStackRaw
+      ? projectForm.techStackRaw.split(',').map((s) => s.trim()).filter(Boolean)
+      : projectForm.techStack || [];
+
+    const metricsArray = projectForm.metricsRaw
+      ? projectForm.metricsRaw.split('\n').filter(Boolean).map((line) => {
+          const [label, value] = line.split('|').map((s) => s.trim());
+          return { label: label || '', value: value || '' };
+        })
+      : projectForm.metrics || [];
+
+    const draftProject: ProjectItem = {
+      id: projectForm.id?.trim() || editingProjectId || 'draft-preview-project',
+      title: projectForm.title || 'Judul Proyek (Preview Draft)',
+      subtitle: projectForm.subtitle || 'Tagline atau ringkasan proyek...',
+      category: projectForm.category || 'Web Application',
+      description: projectForm.description || 'Deskripsi ringkasan proyek yang sedang diketik...',
+      caseStudy: projectForm.caseStudy || 'Rincian studi kasus dan implementasi arsitektur...',
+      techStack: techArray.length > 0 ? techArray : ['Next.js', 'React', 'TypeScript'],
+      repoUrl: projectForm.repoUrl || '',
+      liveUrl: projectForm.liveUrl || '',
+      imageUrl: projectForm.imageUrl || '',
+      featured: projectForm.featured ?? false,
+      date: projectForm.date || '2026',
+      status: (projectForm.status as any) || 'Deployed',
+      metrics: metricsArray,
+    };
+
+    if (editingProjectId) {
+      return projects.map((p) => (p.id === editingProjectId ? draftProject : p));
+    }
+    return [draftProject, ...projects];
+  };
+
+  const getDraftCertificatesList = () => {
+    const skillsArray = certForm.skillsRaw
+      ? certForm.skillsRaw.split(',').map((s) => s.trim()).filter(Boolean)
+      : certForm.skills || [];
+
+    const draftCert: CertificateItem = {
+      id: certForm.id?.trim() || editingCertId || 'draft-preview-cert',
+      title: certForm.title || 'Nama Sertifikat (Preview Draft)',
+      issuer: certForm.issuer || 'Instansi Penerbit',
+      issueDate: certForm.issueDate || '2026',
+      credentialId: certForm.credentialId || 'REF-PREVIEW-001',
+      category: (certForm.category as any) || 'Fullstack',
+      description: certForm.description || 'Pernyataan akreditasi dan verifikasi kompetensi...',
+      skills: skillsArray.length > 0 ? skillsArray : ['Web Development', 'TypeScript'],
+      verificationUrl: certForm.verificationUrl || '',
+      imageUrl: certForm.imageUrl || '',
+    };
+
+    if (editingCertId) {
+      return certificates.map((c) => (c.id === editingCertId ? draftCert : c));
+    }
+    return [draftCert, ...certificates];
+  };
+
+  const getDraftSkillsList = () => {
+    const parsedSkills = skillForm.skillsRaw
+      ? skillForm.skillsRaw.split('\n').filter(Boolean).map((line) => {
+          const parts = line.split('|').map((s) => s.trim());
+          const name = parts[0] || 'Skill';
+          const level = parts[1] || 'Proficient';
+          const tags = parts[2] ? parts[2].split(',').map((t) => t.trim()) : [];
+          return { name, level, tags };
+        })
+      : skillForm.skills || [];
+
+    const draftCategory: SkillCategory = {
+      code: skillForm.code || 'SKILL-01',
+      title: skillForm.title || 'Kategori Skill (Preview Draft)',
+      description: skillForm.description || 'Deskripsi modul keahlian teknologi...',
+      skills: parsedSkills.length > 0 ? parsedSkills : [{ name: 'React', level: 'Core', tags: ['Frontend', 'SSR'] }],
+    };
+
+    if (editingSkillCode) {
+      return skillCategories.map((cat) => (cat.code === editingSkillCode ? draftCategory : cat));
+    }
+    return [draftCategory, ...skillCategories];
+  };
+
+  const getDraftInterestsList = () => {
+    const detailsArray = interestForm.detailsRaw
+      ? interestForm.detailsRaw.split('\n').map((s) => s.trim()).filter(Boolean)
+      : interestForm.details || [];
+
+    const fieldNotesArray = interestForm.fieldNotesRaw
+      ? interestForm.fieldNotesRaw.split('\n').map((s) => s.trim()).filter(Boolean)
+      : interestForm.fieldNotes || [];
+
+    const draftInterest: InterestItem = {
+      id: interestForm.id?.trim() || editingInterestId || 'draft-preview-interest',
+      title: interestForm.title || 'Judul Minat (Preview Draft)',
+      tagline: interestForm.tagline || 'Tagline catatan lapangan...',
+      badge: interestForm.badge || 'EXPEDITION LOG',
+      imageUrl: interestForm.imageUrl || '',
+      content: interestForm.content || 'Uraian cerita, pengalaman, dan observasi...',
+      details: detailsArray.length > 0 ? detailsArray : ['Poin observasi utama'],
+      fieldNotes: fieldNotesArray.length > 0 ? fieldNotesArray : ['FIELD LOG: Catatan lapangan draft'],
+    };
+
+    if (editingInterestId) {
+      return interests.map((item) => (item.id === editingInterestId ? draftInterest : item));
+    }
+    return [draftInterest, ...interests];
+  };
+
+  const renderPreviewContent = () => {
+    switch (previewTab) {
+      case 'profile-about':
+        return <AboutSection previewData={getDraftProfileData()} />;
+      case 'profile-contact':
+        return <ContactSection previewContact={getDraftContactData()} />;
+      case 'interests':
+        return (
+          <InterestsSection
+            previewInterests={getDraftInterestsList()}
+            initialSelectedId={editingInterestId || interestForm.id || undefined}
+          />
+        );
+      case 'skills':
+        return (
+          <SkillsSection
+            previewCategories={getDraftSkillsList()}
+            initialActiveIndex={0}
+          />
+        );
+      case 'projects':
+        return (
+          <ProjectsSection
+            previewProjects={getDraftProjectsList()}
+            initialSelectedId={editingProjectId || projectForm.id || undefined}
+          />
+        );
+      case 'certificates':
+        return (
+          <CertificatesSection
+            previewCertificates={getDraftCertificatesList()}
+            initialSelectedId={editingCertId || certForm.id || undefined}
+          />
+        );
+      default:
+        return <AboutSection previewData={getDraftProfileData()} />;
+    }
+  };
 
   // Check existing session
   useEffect(() => {
@@ -632,6 +936,18 @@ export default function AdminPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
+            {/* Quick Live Preview Button */}
+            {activeTab !== 'database' && activeTab !== 'messages' && (
+              <button
+                onClick={() => handleOpenPreview()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-600 shadow-sm transition-all hover:scale-105 active:scale-95"
+                title="Buka Pratinjau Dossier Tab Saat Ini"
+              >
+                <Eye className="w-3.5 h-3.5 text-purple-300" />
+                <span className="font-bold">Preview Dossier</span>
+              </button>
+            )}
+
             <Link
               href="/"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700 transition-colors"
@@ -767,24 +1083,35 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Project Form (7 cols) */}
             <div className="lg:col-span-7 bg-[#181920] p-6 rounded-lg border border-neutral-800 shadow-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Plus className="w-4 h-4 text-purple-400" />
                   <h3 className="font-sans text-lg font-bold uppercase text-white">
                     {editingProjectId ? 'EDIT BERKAS PROYEK' : 'TAMBAH PROYEK BARU'}
                   </h3>
                 </div>
-                {editingProjectId && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setEditingProjectId(null);
-                      setProjectForm(initialProjectForm);
-                    }}
-                    className="font-mono text-xs text-neutral-400 hover:text-white underline"
+                    type="button"
+                    onClick={() => handleOpenPreview('projects')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded bg-purple-950 hover:bg-purple-900 text-purple-300 border border-purple-700 font-mono text-xs font-bold transition-all shadow-xs"
+                    title="Pratinjau Dossier #04 dengan input form saat ini"
                   >
-                    Batal Edit
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview Dossier #04</span>
                   </button>
-                )}
+                  {editingProjectId && (
+                    <button
+                      onClick={() => {
+                        setEditingProjectId(null);
+                        setProjectForm(initialProjectForm);
+                      }}
+                      className="font-mono text-xs text-neutral-400 hover:text-white underline ml-2"
+                    >
+                      Batal Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSaveProject} className="space-y-4 font-mono text-xs">
@@ -1026,14 +1353,25 @@ export default function AdminPage() {
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{editingProjectId ? 'SIMPAN PERUBAHAN PROYEK' : 'ARSIPKAN PROYEK KE DATABASE'}</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:flex-1 py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{editingProjectId ? 'SIMPAN PERUBAHAN PROYEK' : 'ARSIPKAN PROYEK KE DATABASE'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('projects')}
+                    className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-purple-300 font-bold uppercase rounded border border-neutral-700 hover:border-purple-600 transition-all flex items-center justify-center gap-2 shrink-0"
+                    title="Pratinjau Dossier #04"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Pratinjau Dossier</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -1116,24 +1454,35 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Certificate Form (7 cols) */}
             <div className="lg:col-span-7 bg-[#181920] p-6 rounded-lg border border-neutral-800 shadow-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Plus className="w-4 h-4 text-amber-400" />
                   <h3 className="font-sans text-lg font-bold uppercase text-white">
                     {editingCertId ? 'EDIT SERTIFIKAT' : 'TAMBAH SERTIFIKAT BARU'}
                   </h3>
                 </div>
-                {editingCertId && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setEditingCertId(null);
-                      setCertForm(initialCertForm);
-                    }}
-                    className="font-mono text-xs text-neutral-400 hover:text-white underline"
+                    type="button"
+                    onClick={() => handleOpenPreview('certificates')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded bg-amber-950 hover:bg-amber-900 text-amber-300 border border-amber-700 font-mono text-xs font-bold transition-all shadow-xs"
+                    title="Pratinjau Dossier #05 dengan input form saat ini"
                   >
-                    Batal Edit
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview Dossier #05</span>
                   </button>
-                )}
+                  {editingCertId && (
+                    <button
+                      onClick={() => {
+                        setEditingCertId(null);
+                        setCertForm(initialCertForm);
+                      }}
+                      className="font-mono text-xs text-neutral-400 hover:text-white underline ml-2"
+                    >
+                      Batal Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSaveCertificate} className="space-y-4 font-mono text-xs">
@@ -1319,14 +1668,25 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-amber-700 hover:bg-amber-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{editingCertId ? 'SIMPAN PERUBAHAN SERTIFIKAT' : 'SIMPAN SERTIFIKAT KE DATABASE'}</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:flex-1 py-3 bg-amber-700 hover:bg-amber-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{editingCertId ? 'SIMPAN PERUBAHAN SERTIFIKAT' : 'SIMPAN SERTIFIKAT KE DATABASE'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('certificates')}
+                    className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-bold uppercase rounded border border-neutral-700 hover:border-amber-600 transition-all flex items-center justify-center gap-2 shrink-0"
+                    title="Pratinjau Dossier #05"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Pratinjau Dossier</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -1407,14 +1767,36 @@ export default function AdminPage() {
         {/* ------------------------------------------------------------- */}
         {activeTab === 'profile' && (
           <div className="max-w-4xl bg-[#181920] p-6 sm:p-8 rounded-lg border border-neutral-800 shadow-xl space-y-6">
-            <div className="border-b border-neutral-800 pb-3">
-              <h3 className="font-sans text-lg font-bold uppercase text-white flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-400" />
-                <span>IDENTITAS DOSSIER & KONTAK (ABOUT & CONTACT)</span>
-              </h3>
-              <p className="font-serif text-xs text-neutral-400 mt-1">
-                Data utama yang tampil pada tab Dossier #01 (About Me) dan Dossier #06 (Contact).
-              </p>
+            <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+              <div>
+                <h3 className="font-sans text-lg font-bold uppercase text-white flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-400" />
+                  <span>IDENTITAS DOSSIER & KONTAK (ABOUT & CONTACT)</span>
+                </h3>
+                <p className="font-serif text-xs text-neutral-400 mt-1">
+                  Data utama yang tampil pada tab Dossier #01 (About Me) dan Dossier #06 (Contact).
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenPreview('profile-about')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700 font-mono text-xs font-bold transition-all shadow-xs"
+                  title="Pratinjau Dossier #01: About Me"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Preview About (#01)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenPreview('profile-contact')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-xs font-bold transition-all shadow-xs"
+                  title="Pratinjau Dossier #06: Contact Memo"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Preview Contact (#06)</span>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSaveProfile} className="space-y-5 font-mono text-xs">
@@ -1724,14 +2106,36 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>SIMPAN PERUBAHAN PROFIL & KONTAK</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full sm:flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>SIMPAN PERUBAHAN PROFIL & KONTAK</span>
+                </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('profile-about')}
+                    className="flex-1 sm:flex-initial px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-blue-300 font-bold uppercase rounded border border-neutral-700 hover:border-blue-600 transition-all flex items-center justify-center gap-2"
+                    title="Pratinjau Dossier #01: About Me"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Preview About</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('profile-contact')}
+                    className="flex-1 sm:flex-initial px-4 py-3 bg-neutral-800 hover:bg-neutral-700 text-slate-300 font-bold uppercase rounded border border-neutral-700 hover:border-slate-600 transition-all flex items-center justify-center gap-2"
+                    title="Pratinjau Dossier #06: Contact Memo"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Preview Contact</span>
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         )}
@@ -1743,24 +2147,35 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Skill Category Form (7 cols) */}
             <div className="lg:col-span-7 bg-[#181920] p-6 rounded-lg border border-neutral-800 shadow-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Plus className="w-4 h-4 text-emerald-400" />
                   <h3 className="font-sans text-lg font-bold uppercase text-white">
                     {editingSkillCode ? 'EDIT KATEGORI SKILL' : 'TAMBAH KATEGORI SKILL'}
                   </h3>
                 </div>
-                {editingSkillCode && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setEditingSkillCode(null);
-                      setSkillForm(initialSkillForm);
-                    }}
-                    className="font-mono text-xs text-neutral-400 hover:text-white underline"
+                    type="button"
+                    onClick={() => handleOpenPreview('skills')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700 font-mono text-xs font-bold transition-all shadow-xs"
+                    title="Pratinjau Dossier #03 dengan input form saat ini"
                   >
-                    Batal Edit
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview Dossier #03</span>
                   </button>
-                )}
+                  {editingSkillCode && (
+                    <button
+                      onClick={() => {
+                        setEditingSkillCode(null);
+                        setSkillForm(initialSkillForm);
+                      }}
+                      className="font-mono text-xs text-neutral-400 hover:text-white underline ml-2"
+                    >
+                      Batal Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSaveSkillCategory} className="space-y-4 font-mono text-xs">
@@ -1836,14 +2251,25 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>SIMPAN KATEGORI SKILL</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:flex-1 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>SIMPAN KATEGORI SKILL</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('skills')}
+                    className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-emerald-300 font-bold uppercase rounded border border-neutral-700 hover:border-emerald-600 transition-all flex items-center justify-center gap-2 shrink-0"
+                    title="Pratinjau Dossier #03"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Pratinjau Dossier</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -1916,24 +2342,35 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Interest Form (7 cols) */}
             <div className="lg:col-span-7 bg-[#181920] p-6 rounded-lg border border-neutral-800 shadow-xl space-y-6">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex flex-wrap items-center justify-between border-b border-neutral-800 pb-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Plus className="w-4 h-4 text-red-400" />
                   <h3 className="font-sans text-lg font-bold uppercase text-white">
                     {editingInterestId ? 'EDIT CATATAN MINAT' : 'TAMBAH CATATAN MINAT BARU'}
                   </h3>
                 </div>
-                {editingInterestId && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      setEditingInterestId(null);
-                      setInterestForm(initialInterestForm);
-                    }}
-                    className="font-mono text-xs text-neutral-400 hover:text-white underline"
+                    type="button"
+                    onClick={() => handleOpenPreview('interests')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded bg-red-950 hover:bg-red-900 text-red-300 border border-red-700 font-mono text-xs font-bold transition-all shadow-xs"
+                    title="Pratinjau Dossier #02 dengan input form saat ini"
                   >
-                    Batal Edit
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview Dossier #02</span>
                   </button>
-                )}
+                  {editingInterestId && (
+                    <button
+                      onClick={() => {
+                        setEditingInterestId(null);
+                        setInterestForm(initialInterestForm);
+                      }}
+                      className="font-mono text-xs text-neutral-400 hover:text-white underline ml-2"
+                    >
+                      Batal Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSaveInterest} className="space-y-4 font-mono text-xs">
@@ -2080,14 +2517,25 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>SIMPAN CATATAN MINAT</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>SIMPAN CATATAN MINAT</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPreview('interests')}
+                    className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-red-300 font-bold uppercase rounded border border-neutral-700 hover:border-red-600 transition-all flex items-center justify-center gap-2 shrink-0"
+                    title="Pratinjau Dossier #02"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Pratinjau Dossier</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -2274,6 +2722,133 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* ------------------------------------------------------------- */}
+      {/* DOSSIER LIVE PREVIEW MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {previewModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-neutral-950/85 backdrop-blur-md animate-fadeIn"
+          onClick={() => setPreviewModalOpen(false)}
+        >
+          <div
+            className="relative bg-[#16171d] text-[#f4efe6] w-full max-w-6xl max-h-[94vh] rounded-xl shadow-2xl border border-neutral-700 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Top Bar */}
+            <div className="bg-[#121316] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-3.5 h-3.5 rounded-full shadow-xs"
+                    style={{ backgroundColor: getPreviewFolderColor(previewTab) }}
+                  />
+                  <span className="font-mono text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                    {getPreviewModalTitle(previewTab)}
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-mono text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
+                  ● DRAFT FORM AKTIF
+                </span>
+              </div>
+
+              {/* Profile & Contact Sub-Tab Toggles */}
+              {(previewTab === 'profile-about' || previewTab === 'profile-contact') && (
+                <div className="flex items-center gap-1.5 bg-neutral-900 p-1 rounded border border-neutral-800 font-mono text-xs">
+                  <button
+                    onClick={() => setPreviewTab('profile-about')}
+                    className={`px-3 py-1 rounded transition-colors font-bold uppercase ${
+                      previewTab === 'profile-about'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Dossier #01: About
+                  </button>
+                  <button
+                    onClick={() => setPreviewTab('profile-contact')}
+                    className={`px-3 py-1 rounded transition-colors font-bold uppercase ${
+                      previewTab === 'profile-contact'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Dossier #06: Contact
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPreviewModalOpen(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded font-mono text-xs transition-colors border border-neutral-700"
+                  title="Tutup Pratinjau (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Tutup (Esc)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Physical Dossier Envelope & Paper Sheet */}
+            <div className="p-3 sm:p-6 overflow-y-auto flex-1 bg-[#0f1013]">
+              <div
+                className="rounded-t-2xl sm:rounded-t-3xl shadow-2xl p-2 sm:p-4 md:p-6 transition-colors duration-300 relative border-t-2 border-l-2 border-r-2 border-white/25"
+                style={{ backgroundColor: getPreviewFolderColor(previewTab) }}
+              >
+                {/* Physical Folder Die-cut Tab Top Header */}
+                <div className="flex items-center justify-between pb-3 px-2 text-white">
+                  <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider">
+                    <span className="px-2 py-0.5 rounded bg-black/30 font-bold">
+                      {getPreviewFolderIndex(previewTab)}
+                    </span>
+                    <span className="font-bold text-sm tracking-wide">
+                      {getPreviewFolderCategory(previewTab)}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[11px] opacity-80 hidden sm:inline-block">
+                    BOATMIE ARCHIVAL SYSTEM // 2026 [ADMIN PREVIEW MODE]
+                  </span>
+                </div>
+
+                {/* Inner Paper Sheet */}
+                <div className="bg-paper-texture text-neutral-900 rounded-sm sm:rounded-md shadow-2xl relative p-4 sm:p-8 lg:p-10 min-h-[550px] border border-neutral-300/80">
+                  {/* 3-Ring Binder Holes (Left margin) */}
+                  <div className="hidden sm:block absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                    <BinderHoles count={3} />
+                  </div>
+
+                  {/* Top Paperclip Decor */}
+                  <div className="absolute -top-7 right-12 z-20 hidden sm:block pointer-events-none">
+                    <PaperClip className="w-8 h-16" color="#334155" />
+                  </div>
+
+                  {/* Section Content with binder indentation */}
+                  <div className="sm:pl-8 lg:pl-10">
+                    {renderPreviewContent()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Bottom Footer */}
+            <div className="bg-[#121316] px-4 sm:px-6 py-2.5 border-t border-neutral-800 flex flex-wrap items-center justify-between text-neutral-400 font-mono text-xs gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Pratinjau merender data dari form yang sedang Anda ketik. Tekan tombol Simpan di form admin untuk menyimpan ke Firestore.</span>
+              </div>
+              <button
+                onClick={() => setPreviewModalOpen(false)}
+                className="text-neutral-300 hover:text-white underline font-bold"
+              >
+                Kembali ke Edit Form
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

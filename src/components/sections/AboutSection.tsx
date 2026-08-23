@@ -11,23 +11,29 @@ import { TapeStrip } from '../common/TapeStrip';
 import { Terminal, Compass, Sparkles, Code2, Layers, Cpu, ArrowUpRight } from 'lucide-react';
 
 interface AboutSectionProps {
-  onOpenProjects: () => void;
-  onOpenContact: () => void;
+  onOpenProjects?: () => void;
+  onOpenContact?: () => void;
+  previewData?: AboutData;
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({
   onOpenProjects,
   onOpenContact,
+  previewData,
 }) => {
-  const [about, setAbout] = useState<AboutData>(ABOUT_DATA);
+  const [about, setAbout] = useState<AboutData>(previewData || ABOUT_DATA);
 
   useEffect(() => {
+    if (previewData) {
+      setAbout(previewData);
+      return;
+    }
     fetchAbout().then((data) => {
       if (data && data.name) {
         setAbout(data);
       }
     });
-  }, []);
+  }, [previewData]);
   return (
     <div className="space-y-8 text-neutral-900">
       {/* Top Dossier Memo Header */}
@@ -136,15 +142,26 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
 
           {/* Lead Editorial Paragraph with Drop Cap */}
           <div className="prose prose-neutral max-w-none">
-            <p className="font-serif text-lg sm:text-xl text-neutral-800 leading-relaxed drop-cap mb-4">
-              {about.bioParagraphs[0]}
-            </p>
-            <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed mb-4">
-              {about.bioParagraphs[1]}
-            </p>
-            <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed">
-              {about.bioParagraphs[2]}
-            </p>
+            {about.bioParagraphs?.[0] && (
+              <p className="font-serif text-lg sm:text-xl text-neutral-800 leading-relaxed drop-cap mb-4">
+                {about.bioParagraphs[0]}
+              </p>
+            )}
+            {about.bioParagraphs?.[1] && (
+              <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed mb-4">
+                {about.bioParagraphs[1]}
+              </p>
+            )}
+            {about.bioParagraphs?.[2] && (
+              <p className="font-serif text-base sm:text-lg text-neutral-700 leading-relaxed">
+                {about.bioParagraphs[2]}
+              </p>
+            )}
+            {(!about.bioParagraphs || about.bioParagraphs.length === 0) && (
+              <p className="font-serif text-base sm:text-lg text-neutral-500 italic">
+                Belum ada paragraf bio yang dimasukkan.
+              </p>
+            )}
           </div>
 
           {/* Core Pillars Grid */}

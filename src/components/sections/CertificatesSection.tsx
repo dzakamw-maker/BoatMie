@@ -20,20 +20,40 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-export const CertificatesSection: React.FC = () => {
-  const [certificates, setCertificates] = useState<CertificateItem[]>(CERTIFICATES_DATA);
-  const [selectedCertId, setSelectedCertId] = useState<string>(CERTIFICATES_DATA[0].id);
+interface CertificatesSectionProps {
+  previewCertificates?: CertificateItem[];
+  initialSelectedId?: string;
+}
+
+export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
+  previewCertificates,
+  initialSelectedId,
+}) => {
+  const [certificates, setCertificates] = useState<CertificateItem[]>(previewCertificates || CERTIFICATES_DATA);
+  const [selectedCertId, setSelectedCertId] = useState<string>(
+    initialSelectedId || previewCertificates?.[0]?.id || CERTIFICATES_DATA[0].id
+  );
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalCategoryFilter, setModalCategoryFilter] = useState<string>('ALL');
 
   useEffect(() => {
+    if (previewCertificates) {
+      setCertificates(previewCertificates);
+      if (initialSelectedId) {
+        setSelectedCertId(initialSelectedId);
+      } else if (previewCertificates.length > 0 && !previewCertificates.some((c) => c.id === selectedCertId)) {
+        setSelectedCertId(previewCertificates[0].id);
+      }
+      return;
+    }
     fetchCertificates().then((data) => {
       if (data && data.length > 0) {
         setCertificates(data);
+        if (!selectedCertId) setSelectedCertId(data[0].id);
       }
     });
-  }, []);
+  }, [previewCertificates, initialSelectedId]);
 
   const selectedCert =
     certificates.find((c) => c.id === selectedCertId) || certificates[0] || CERTIFICATES_DATA[0];
@@ -194,7 +214,7 @@ export const CertificatesSection: React.FC = () => {
                 VERIFIED SKILLSETS & COMPETENCY
               </h5>
               <div className="flex flex-wrap gap-2">
-                {selectedCert.skills.map((skill) => (
+                {(selectedCert.skills || []).map((skill) => (
                   <span
                     key={skill}
                     className="font-mono text-xs px-2.5 py-1 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold"

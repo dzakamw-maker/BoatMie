@@ -9,17 +9,37 @@ import { TapeStrip } from '../common/TapeStrip';
 import { StickyNote } from '../common/StickyNote';
 import { Coffee, Compass, Gamepad2, Waves, Disc3, Sparkles, CheckCircle2 } from 'lucide-react';
 
-export const InterestsSection: React.FC = () => {
-  const [interests, setInterests] = useState<InterestItem[]>(INTERESTS_DATA);
-  const [activeInterestId, setActiveInterestId] = useState<string>(INTERESTS_DATA[0].id);
+interface InterestsSectionProps {
+  previewInterests?: InterestItem[];
+  initialSelectedId?: string;
+}
+
+export const InterestsSection: React.FC<InterestsSectionProps> = ({
+  previewInterests,
+  initialSelectedId,
+}) => {
+  const [interests, setInterests] = useState<InterestItem[]>(previewInterests || INTERESTS_DATA);
+  const [activeInterestId, setActiveInterestId] = useState<string>(
+    initialSelectedId || previewInterests?.[0]?.id || INTERESTS_DATA[0].id
+  );
 
   useEffect(() => {
+    if (previewInterests) {
+      setInterests(previewInterests);
+      if (initialSelectedId) {
+        setActiveInterestId(initialSelectedId);
+      } else if (previewInterests.length > 0 && !previewInterests.some((i) => i.id === activeInterestId)) {
+        setActiveInterestId(previewInterests[0].id);
+      }
+      return;
+    }
     fetchInterests().then((data) => {
       if (data && data.length > 0) {
         setInterests(data);
+        if (!activeInterestId) setActiveInterestId(data[0].id);
       }
     });
-  }, []);
+  }, [previewInterests, initialSelectedId]);
 
   const activeInterest = interests.find((item) => item.id === activeInterestId) || interests[0] || INTERESTS_DATA[0];
 
@@ -129,7 +149,7 @@ export const InterestsSection: React.FC = () => {
               OBSERVATION METRICS & CORE PRINCIPLES
             </h4>
             <div className="space-y-2">
-              {activeInterest.details.map((detail, idx) => (
+              {(activeInterest.details || []).map((detail, idx) => (
                 <div key={idx} className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-red-600 mt-1 shrink-0" />
                   <span className="font-serif text-sm sm:text-base text-neutral-800 leading-snug">
@@ -194,14 +214,14 @@ export const InterestsSection: React.FC = () => {
                 </div>
               </div>
               <div className="font-mono text-[10px] sm:text-[11px] text-neutral-300 text-center tracking-wider px-1">
-                TAPE REF: {activeInterest.id.toUpperCase().replace('-', '_')}.WAV
+                TAPE REF: {(activeInterest.id || 'PREVIEW').toUpperCase().replace('-', '_')}.WAV
               </div>
             </div>
           </div>
 
           {/* Sticky Note: Field Log Quotes */}
           <StickyNote title="FIELD LOG ARCHIVE" color="pink" rotate={2}>
-            {activeInterest.fieldNotes.map((note, idx) => (
+            {(activeInterest.fieldNotes || []).map((note, idx) => (
               <div key={idx} className="mb-2 last:mb-0">
                 {note}
               </div>

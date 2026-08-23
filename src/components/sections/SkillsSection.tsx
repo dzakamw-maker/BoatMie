@@ -8,17 +8,32 @@ import { StampBadge } from '../common/StampBadge';
 import { TechIcon } from '../common/TechIcon';
 import { Cpu, Terminal, Database, Cloud, Layers } from 'lucide-react';
 
-export const SkillsSection: React.FC = () => {
-  const [categories, setCategories] = useState<SkillCategory[]>(SKILL_CATEGORIES);
-  const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(0);
+interface SkillsSectionProps {
+  previewCategories?: SkillCategory[];
+  initialActiveIndex?: number;
+}
+
+export const SkillsSection: React.FC<SkillsSectionProps> = ({
+  previewCategories,
+  initialActiveIndex = 0,
+}) => {
+  const [categories, setCategories] = useState<SkillCategory[]>(previewCategories || SKILL_CATEGORIES);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(initialActiveIndex);
 
   useEffect(() => {
+    if (previewCategories) {
+      setCategories(previewCategories);
+      if (initialActiveIndex !== undefined && initialActiveIndex >= 0) {
+        setActiveCategoryIndex(initialActiveIndex);
+      }
+      return;
+    }
     fetchSkillCategories().then((data) => {
       if (data && data.length > 0) {
         setCategories(data);
       }
     });
-  }, []);
+  }, [previewCategories, initialActiveIndex]);
 
   const activeCategory = categories[activeCategoryIndex] || categories[0] || SKILL_CATEGORIES[0];
 
@@ -130,13 +145,13 @@ export const SkillsSection: React.FC = () => {
               </p>
             </div>
             <div className="px-3 py-1 bg-cyan-950/80 border border-cyan-400/40 rounded font-mono text-xs text-cyan-300">
-              MODULES: {activeCategory.skills.length} UNITS
+              MODULES: {(activeCategory.skills || []).length} UNITS
             </div>
           </div>
 
           {/* Blueprint Skills Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeCategory.skills.map((skill) => (
+            {(activeCategory.skills || []).map((skill) => (
               <div
                 key={skill.name}
                 className="p-4 bg-slate-900/85 backdrop-blur-xs rounded border border-cyan-500/30 hover:border-cyan-400 hover:bg-slate-900/95 transition-all group shadow-sm"
@@ -156,7 +171,7 @@ export const SkillsSection: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-cyan-900/50">
-                  {skill.tags.map((tag) => (
+                  {(skill.tags || []).map((tag) => (
                     <span
                       key={tag}
                       className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/80"

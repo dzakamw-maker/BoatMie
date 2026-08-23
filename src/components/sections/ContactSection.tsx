@@ -8,8 +8,14 @@ import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
 import { Mail, Github, Linkedin, Instagram, Send, CheckCircle2, MapPin, Terminal, AlertCircle, ArrowUpRight } from 'lucide-react';
 
-export const ContactSection: React.FC = () => {
-  const [contact, setContact] = useState<ContactInfo>(CONTACT_DATA);
+interface ContactSectionProps {
+  previewContact?: ContactInfo;
+}
+
+export const ContactSection: React.FC<ContactSectionProps> = ({
+  previewContact,
+}) => {
+  const [contact, setContact] = useState<ContactInfo>(previewContact || CONTACT_DATA);
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -24,12 +30,16 @@ export const ContactSection: React.FC = () => {
   const [honeypot, setHoneypot] = useState<string>('');
 
   useEffect(() => {
+    if (previewContact) {
+      setContact(previewContact);
+      return;
+    }
     fetchContact().then((data) => {
       if (data && data.email) {
         setContact(data);
       }
     });
-  }, []);
+  }, [previewContact]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
