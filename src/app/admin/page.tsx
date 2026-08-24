@@ -71,6 +71,254 @@ import {
   Mail,
 } from 'lucide-react';
 
+interface ImageFramingInputProps {
+  label: string;
+  themeColor: 'blue' | 'purple' | 'amber' | 'red';
+  imageUrl: string;
+  placeholder?: string;
+  helpText?: string;
+  onImageUrlChange: (url: string) => void;
+  posX?: number;
+  posY?: number;
+  scale?: number;
+  onPositionChange: (posX: number, posY: number, scale: number) => void;
+  aspectRatio?: 'square' | 'video' | '4/3';
+  showGrayscalePreview?: boolean;
+}
+
+const THEME_STYLES = {
+  blue: {
+    label: 'text-blue-400',
+    borderFocus: 'focus:border-blue-500',
+    accent: 'accent-blue-500',
+    btnActive: 'bg-blue-950 text-blue-300 border-blue-800',
+    textCoord: 'text-blue-400',
+    frameBorder: 'border-blue-500/60',
+  },
+  purple: {
+    label: 'text-purple-400',
+    borderFocus: 'focus:border-purple-500',
+    accent: 'accent-purple-500',
+    btnActive: 'bg-purple-950 text-purple-300 border-purple-800',
+    textCoord: 'text-purple-400',
+    frameBorder: 'border-purple-500/60',
+  },
+  amber: {
+    label: 'text-amber-400',
+    borderFocus: 'focus:border-amber-500',
+    accent: 'accent-amber-500',
+    btnActive: 'bg-amber-950 text-amber-300 border-amber-800',
+    textCoord: 'text-amber-400',
+    frameBorder: 'border-amber-500/60',
+  },
+  red: {
+    label: 'text-red-400',
+    borderFocus: 'focus:border-red-500',
+    accent: 'accent-red-500',
+    btnActive: 'bg-red-950 text-red-300 border-red-800',
+    textCoord: 'text-red-400',
+    frameBorder: 'border-red-500/60',
+  },
+};
+
+function ImageFramingInput({
+  label,
+  themeColor,
+  imageUrl,
+  placeholder,
+  helpText,
+  onImageUrlChange,
+  posX = 50,
+  posY = 50,
+  scale = 100,
+  onPositionChange,
+  aspectRatio = 'square',
+  showGrayscalePreview = false,
+}: ImageFramingInputProps) {
+  const t = THEME_STYLES[themeColor];
+  const aspectClass =
+    aspectRatio === 'video'
+      ? 'aspect-video w-44'
+      : aspectRatio === '4/3'
+      ? 'aspect-[4/3] w-36'
+      : 'aspect-square w-32';
+
+  return (
+    <div className="space-y-3 p-4 bg-neutral-900/90 rounded border border-neutral-800">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label className={`block ${t.label} font-bold uppercase flex items-center gap-1.5 text-xs`}>
+          <ImageIcon className="w-3.5 h-3.5" />
+          <span>{label}</span>
+        </label>
+        {imageUrl && (
+          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> Live Framing Aktif
+          </span>
+        )}
+      </div>
+
+      <div>
+        <input
+          type="text"
+          value={imageUrl || ''}
+          onChange={(e) => onImageUrlChange(e.target.value)}
+          placeholder={placeholder || 'https://... atau /media/...'}
+          className={`w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white ${t.borderFocus} focus:outline-hidden text-xs`}
+        />
+        {helpText && <p className="text-[10px] text-neutral-400 mt-1">{helpText}</p>}
+      </div>
+
+      {imageUrl && (
+        <div className="pt-3 border-t border-neutral-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          {/* Live Framing Preview */}
+          <div className="md:col-span-4 flex flex-col items-center justify-center p-3 bg-neutral-950/90 rounded border border-neutral-800">
+            <span className="text-[10px] uppercase font-mono text-neutral-400 mb-2">Live Dossier Frame</span>
+            <div className={`relative ${aspectClass} bg-neutral-900 rounded-sm border-2 ${t.frameBorder} overflow-hidden shadow-inner flex items-center justify-center`}>
+              <img
+                src={imageUrl}
+                alt="Preview"
+                style={{
+                  objectPosition: `${posX}% ${posY}%`,
+                  transformOrigin: `${posX}% ${posY}%`,
+                  transform: `scale(${scale / 100})`,
+                }}
+                className={`w-full h-full object-cover transition-all duration-150 ${
+                  showGrayscalePreview ? 'grayscale contrast-110' : ''
+                }`}
+                onError={(e) => {
+                  (e.currentTarget.parentElement as HTMLElement).innerHTML =
+                    '<div class="text-[9px] text-red-400 p-2 text-center">URL Tidak Valid</div>';
+                }}
+              />
+            </div>
+            <span className="text-[9px] text-neutral-400 font-mono mt-2 text-center">
+              X: {posX}% | Y: {posY}% | Zoom: {scale}%
+            </span>
+          </div>
+
+          {/* Controls (Presets & Sliders) */}
+          <div className="md:col-span-8 space-y-3 font-mono text-xs">
+            {/* Presets */}
+            <div>
+              <span className="text-[10px] text-neutral-400 uppercase font-bold block mb-1.5">
+                Preset Posisi Cepat:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(50, 50, scale)}
+                  className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[10px] border border-neutral-700 transition-colors"
+                >
+                  Tengah
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(50, 15, scale)}
+                  className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[10px] border border-neutral-700 transition-colors"
+                >
+                  Fokus Atas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(50, 85, scale)}
+                  className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[10px] border border-neutral-700 transition-colors"
+                >
+                  Fokus Bawah
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(15, 50, scale)}
+                  className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[10px] border border-neutral-700 transition-colors"
+                >
+                  Fokus Kiri
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(85, 50, scale)}
+                  className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded text-[10px] border border-neutral-700 transition-colors"
+                >
+                  Fokus Kanan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPositionChange(50, 50, 100)}
+                  className={`px-2.5 py-1 ${t.btnActive} rounded text-[10px] border transition-colors`}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            {/* Slider X */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-neutral-300">Posisi Horizontal (Kiri ↔ Kanan):</span>
+                <span className={`${t.textCoord} font-bold`}>{posX}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={posX}
+                onChange={(e) => onPositionChange(Number(e.target.value), posY, scale)}
+                className={`w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer ${t.accent}`}
+              />
+              <div className="flex justify-between text-[9px] text-neutral-400">
+                <span>0% (Kiri)</span>
+                <span>50% (Tengah)</span>
+                <span>100% (Kanan)</span>
+              </div>
+            </div>
+
+            {/* Slider Y */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-neutral-300">Posisi Vertikal (Atas ↔ Bawah):</span>
+                <span className={`${t.textCoord} font-bold`}>{posY}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={posY}
+                onChange={(e) => onPositionChange(posX, Number(e.target.value), scale)}
+                className={`w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer ${t.accent}`}
+              />
+              <div className="flex justify-between text-[9px] text-neutral-400">
+                <span>0% (Paling Atas)</span>
+                <span>50% (Tengah)</span>
+                <span>100% (Paling Bawah)</span>
+              </div>
+            </div>
+
+            {/* Slider Zoom */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-neutral-300">Zoom / Skala Foto:</span>
+                <span className={`${t.textCoord} font-bold`}>{scale}%</span>
+              </div>
+              <input
+                type="range"
+                min={100}
+                max={200}
+                step={5}
+                value={scale}
+                onChange={(e) => onPositionChange(posX, posY, Number(e.target.value))}
+                className={`w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer ${t.accent}`}
+              />
+              <div className="flex justify-between text-[9px] text-neutral-400">
+                <span>100% (Normal)</span>
+                <span>150% (Zoom 1.5x)</span>
+                <span>200% (Zoom 2x)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -111,6 +359,9 @@ export default function AdminPage() {
     repoUrl: '',
     liveUrl: '',
     imageUrl: '',
+    imagePosX: 50,
+    imagePosY: 50,
+    imageScale: 100,
     featured: false,
     date: '2026',
     status: 'Deployed',
@@ -131,6 +382,9 @@ export default function AdminPage() {
     skillsRaw: '',
     verificationUrl: '',
     imageUrl: '',
+    imagePosX: 50,
+    imagePosY: 50,
+    imageScale: 100,
     sortOrder: 0,
   };
   const [certForm, setCertForm] = useState(initialCertForm);
@@ -152,6 +406,9 @@ export default function AdminPage() {
     tagline: '',
     badge: 'EXPEDITION LOG',
     imageUrl: '',
+    imagePosX: 50,
+    imagePosY: 50,
+    imageScale: 100,
     content: '',
     detailsRaw: '',
     fieldNotesRaw: '',
@@ -299,6 +556,9 @@ export default function AdminPage() {
     const statsArray = Array.isArray(aboutData.stats) ? aboutData.stats : [];
     return {
       ...aboutData,
+      avatarPosX: aboutData.avatarPosX ?? 50,
+      avatarPosY: aboutData.avatarPosY ?? 50,
+      avatarScale: aboutData.avatarScale ?? 100,
       name: aboutData.name || '',
       alias: aboutData.alias || '',
       avatarUrl: aboutData.avatarUrl || '',
@@ -340,6 +600,9 @@ export default function AdminPage() {
       repoUrl: projectForm.repoUrl || '',
       liveUrl: projectForm.liveUrl || '',
       imageUrl: projectForm.imageUrl || '',
+      imagePosX: projectForm.imagePosX ?? 50,
+      imagePosY: projectForm.imagePosY ?? 50,
+      imageScale: projectForm.imageScale ?? 100,
       featured: projectForm.featured ?? false,
       date: projectForm.date || '2026',
       status: (projectForm.status as any) || 'Deployed',
@@ -368,6 +631,9 @@ export default function AdminPage() {
       skills: skillsArray.length > 0 ? skillsArray : ['Web Development', 'TypeScript'],
       verificationUrl: certForm.verificationUrl || '',
       imageUrl: certForm.imageUrl || '',
+      imagePosX: certForm.imagePosX ?? 50,
+      imagePosY: certForm.imagePosY ?? 50,
+      imageScale: certForm.imageScale ?? 100,
     };
 
     if (editingCertId) {
@@ -415,6 +681,9 @@ export default function AdminPage() {
       tagline: interestForm.tagline || 'Tagline catatan lapangan...',
       badge: interestForm.badge || 'EXPEDITION LOG',
       imageUrl: interestForm.imageUrl || '',
+      imagePosX: interestForm.imagePosX ?? 50,
+      imagePosY: interestForm.imagePosY ?? 50,
+      imageScale: interestForm.imageScale ?? 100,
       content: interestForm.content || 'Uraian cerita, pengalaman, dan observasi...',
       details: detailsArray.length > 0 ? detailsArray : ['Poin observasi utama'],
       fieldNotes: fieldNotesArray.length > 0 ? fieldNotesArray : ['FIELD LOG: Catatan lapangan draft'],
@@ -432,13 +701,15 @@ export default function AdminPage() {
         return <AboutSection previewData={getDraftAboutData()} />;
       case 'contact':
         return <ContactSection previewContact={getDraftContactData()} />;
-      case 'interests':
+      case 'interests': {
+        const list = getDraftInterestsList();
         return (
           <InterestsSection
-            previewInterests={getDraftInterestsList()}
-            initialSelectedId={editingInterestId || interestForm.id || undefined}
+            previewInterests={list}
+            initialSelectedId={editingInterestId || interestForm.id || list[0]?.id}
           />
         );
+      }
       case 'skills':
         return (
           <SkillsSection
@@ -446,20 +717,24 @@ export default function AdminPage() {
             initialActiveIndex={0}
           />
         );
-      case 'projects':
+      case 'projects': {
+        const list = getDraftProjectsList();
         return (
           <ProjectsSection
-            previewProjects={getDraftProjectsList()}
-            initialSelectedId={editingProjectId || projectForm.id || undefined}
+            previewProjects={list}
+            initialSelectedId={editingProjectId || projectForm.id || list[0]?.id}
           />
         );
-      case 'certificates':
+      }
+      case 'certificates': {
+        const list = getDraftCertificatesList();
         return (
           <CertificatesSection
-            previewCertificates={getDraftCertificatesList()}
-            initialSelectedId={editingCertId || certForm.id || undefined}
+            previewCertificates={list}
+            initialSelectedId={editingCertId || certForm.id || list[0]?.id}
           />
         );
+      }
       default:
         return <AboutSection previewData={getDraftAboutData()} />;
     }
@@ -594,6 +869,9 @@ export default function AdminPage() {
       repoUrl: projectForm.repoUrl || '',
       liveUrl: projectForm.liveUrl || '',
       imageUrl: projectForm.imageUrl || '',
+      imagePosX: projectForm.imagePosX ?? 50,
+      imagePosY: projectForm.imagePosY ?? 50,
+      imageScale: projectForm.imageScale ?? 100,
       featured: projectForm.featured ?? false,
       date: projectForm.date || '2026',
       metrics: metricsArray,
@@ -616,6 +894,9 @@ export default function AdminPage() {
     setEditingProjectId(item.id);
     setProjectForm({
       ...item,
+      imagePosX: item.imagePosX ?? 50,
+      imagePosY: item.imagePosY ?? 50,
+      imageScale: item.imageScale ?? 100,
       techStackRaw: item.techStack.join(', '),
       metricsRaw: (item.metrics || []).map((m) => `${m.label} | ${m.value}`).join('\n'),
       sortOrder: (item as any).sort_order || 0,
@@ -662,6 +943,9 @@ export default function AdminPage() {
       skills: skillsArray,
       verificationUrl: certForm.verificationUrl || '',
       imageUrl: certForm.imageUrl || '',
+      imagePosX: certForm.imagePosX ?? 50,
+      imagePosY: certForm.imagePosY ?? 50,
+      imageScale: certForm.imageScale ?? 100,
     };
 
     const res = await saveCertificate({ ...certPayload, sort_order: certForm.sortOrder || 0 } as any);
@@ -680,6 +964,9 @@ export default function AdminPage() {
     setEditingCertId(item.id);
     setCertForm({
       ...item,
+      imagePosX: item.imagePosX ?? 50,
+      imagePosY: item.imagePosY ?? 50,
+      imageScale: item.imageScale ?? 100,
       skillsRaw: item.skills.join(', '),
       sortOrder: (item as any).sort_order || 0,
     });
@@ -823,6 +1110,9 @@ export default function AdminPage() {
       tagline: interestForm.tagline || '',
       badge: interestForm.badge || 'EXPEDITION LOG',
       imageUrl: interestForm.imageUrl || '',
+      imagePosX: interestForm.imagePosX ?? 50,
+      imagePosY: interestForm.imagePosY ?? 50,
+      imageScale: interestForm.imageScale ?? 100,
       content: interestForm.content,
       details: detailsArray,
       fieldNotes: fieldNotesArray,
@@ -844,6 +1134,9 @@ export default function AdminPage() {
     setEditingInterestId(item.id);
     setInterestForm({
       ...item,
+      imagePosX: item.imagePosX ?? 50,
+      imagePosY: item.imagePosY ?? 50,
+      imageScale: item.imageScale ?? 100,
       detailsRaw: item.details.join('\n'),
       fieldNotesRaw: item.fieldNotes.join('\n'),
       sortOrder: (item as any).sort_order || 0,
@@ -1295,41 +1588,22 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Media Image Link Field */}
-                <div className="space-y-1.5 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
-                  <label className="block text-purple-400 font-bold uppercase flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Link Foto / Screenshot Proyek (URL)</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={projectForm.imageUrl || ''}
-                    onChange={(e) => setProjectForm({ ...projectForm, imageUrl: e.target.value })}
-                    placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-purple-500 focus:outline-hidden"
-                  />
-                  <p className="text-[10px] text-neutral-500">
-                    Masukkan URL gambar langsung (bisa dari Imgur, Cloudinary, Unsplash, GitHub Raw, dll).
-                  </p>
-
-                  {projectForm.imageUrl && (
-                    <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-3">
-                      <div className="w-20 h-12 bg-neutral-950 rounded border border-neutral-700 overflow-hidden shrink-0">
-                        <img
-                          src={projectForm.imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget.parentElement as HTMLElement).innerHTML = '<div class="text-[9px] text-red-400 p-1 text-center">Invalid Link</div>';
-                          }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-emerald-400 font-mono">
-                        ✓ Pratinjau Link Foto Terdeteksi
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* Media Image Link & Framing Controls for Projects */}
+                <ImageFramingInput
+                  label="Link Foto / Screenshot Proyek & Posisi Framing (URL)"
+                  themeColor="purple"
+                  imageUrl={projectForm.imageUrl || ''}
+                  placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
+                  helpText="Masukkan URL gambar langsung (Imgur, Cloudinary, Firebase, Unsplash, dsb) atau path lokal."
+                  posX={projectForm.imagePosX ?? 50}
+                  posY={projectForm.imagePosY ?? 50}
+                  scale={projectForm.imageScale ?? 100}
+                  onImageUrlChange={(url) => setProjectForm({ ...projectForm, imageUrl: url })}
+                  onPositionChange={(posX, posY, scale) =>
+                    setProjectForm({ ...projectForm, imagePosX: posX, imagePosY: posY, imageScale: scale })
+                  }
+                  aspectRatio="video"
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -1496,7 +1770,15 @@ export default function AdminPage() {
 
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
-                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          style={{
+                            objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
+                            transform: `scale(${(item.imageScale ?? 100) / 100})`,
+                          }}
+                          className="w-full h-full object-cover transition-all duration-150 origin-center"
+                        />
                       </div>
                     )}
 
@@ -1680,41 +1962,22 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Media Image Link Field for Certificate */}
-                <div className="space-y-1.5 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
-                  <label className="block text-amber-400 font-bold uppercase flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Link Foto / Dokumen Sertifikat (URL)</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={certForm.imageUrl || ''}
-                    onChange={(e) => setCertForm({ ...certForm, imageUrl: e.target.value })}
-                    placeholder="https://drive.google.com/... atau https://i.imgur.com/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
-                  />
-                  <p className="text-[10px] text-neutral-500">
-                    Masukkan URL gambar langsung dari hasil scan dokumen atau sertifikat digital.
-                  </p>
-
-                  {certForm.imageUrl && (
-                    <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-3">
-                      <div className="w-20 h-14 bg-neutral-950 rounded border border-neutral-700 overflow-hidden shrink-0">
-                        <img
-                          src={certForm.imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget.parentElement as HTMLElement).innerHTML = '<div class="text-[9px] text-red-400 p-1 text-center">Invalid Link</div>';
-                          }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-amber-400 font-mono">
-                        ✓ Pratinjau Dokumen Terdeteksi
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* Media Image Link & Framing Controls for Certificates */}
+                <ImageFramingInput
+                  label="Link Foto / Dokumen Sertifikat & Posisi Framing (URL)"
+                  themeColor="amber"
+                  imageUrl={certForm.imageUrl || ''}
+                  placeholder="https://drive.google.com/... atau https://i.imgur.com/..."
+                  helpText="Masukkan URL gambar langsung dari hasil scan dokumen atau sertifikat digital."
+                  posX={certForm.imagePosX ?? 50}
+                  posY={certForm.imagePosY ?? 50}
+                  scale={certForm.imageScale ?? 100}
+                  onImageUrlChange={(url) => setCertForm({ ...certForm, imageUrl: url })}
+                  onPositionChange={(posX, posY, scale) =>
+                    setCertForm({ ...certForm, imagePosX: posX, imagePosY: posY, imageScale: scale })
+                  }
+                  aspectRatio="4/3"
+                />
 
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">
@@ -1811,7 +2074,15 @@ export default function AdminPage() {
 
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
-                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          style={{
+                            objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
+                            transform: `scale(${(item.imageScale ?? 100) / 100})`,
+                          }}
+                          className="w-full h-full object-cover transition-all duration-150 origin-center"
+                        />
                       </div>
                     )}
 
@@ -1903,38 +2174,23 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Avatar URL Link */}
-              <div className="space-y-1.5 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
-                <label className="block text-blue-400 font-bold uppercase flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>Link Foto Profil / Avatar (URL)</span>
-                </label>
-                <input
-                  type="text"
-                  value={aboutData.avatarUrl || ''}
-                  onChange={(e) => setAboutData({ ...aboutData, avatarUrl: e.target.value })}
-                  placeholder="https://... atau /media/profile/avatar.png"
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-blue-500 focus:outline-hidden"
-                />
-
-                {aboutData.avatarUrl && (
-                  <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-3">
-                    <div className="w-14 h-14 bg-neutral-950 rounded-full border border-neutral-700 overflow-hidden shrink-0">
-                      <img
-                        src={aboutData.avatarUrl}
-                        alt="Avatar"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget.parentElement as HTMLElement).innerHTML = '<div class="text-[9px] text-red-400 p-2 text-center">Invalid</div>';
-                        }}
-                      />
-                    </div>
-                    <span className="text-[11px] text-blue-400 font-mono">
-                      ✓ Pratinjau Avatar Terdeteksi
-                    </span>
-                  </div>
-                )}
-              </div>
+              {/* Avatar URL Link & Framing Controls */}
+              <ImageFramingInput
+                label="Link Foto Profil / Avatar & Kontrol Posisi (URL)"
+                themeColor="blue"
+                imageUrl={aboutData.avatarUrl || ''}
+                placeholder="https://... atau /media/profile/avatar.png"
+                helpText="Bisa berupa link URL langsung (Google Drive direct, Imgur, Firebase, Cloudinary, dll.) atau path lokal."
+                posX={aboutData.avatarPosX ?? 50}
+                posY={aboutData.avatarPosY ?? 50}
+                scale={aboutData.avatarScale ?? 100}
+                onImageUrlChange={(url) => setAboutData({ ...aboutData, avatarUrl: url })}
+                onPositionChange={(posX, posY, scale) =>
+                  setAboutData({ ...aboutData, avatarPosX: posX, avatarPosY: posY, avatarScale: scale })
+                }
+                aspectRatio="square"
+                showGrayscalePreview={true}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -2510,45 +2766,29 @@ export default function AdminPage() {
                     <input
                       type="text"
                       value={interestForm.tagline || ''}
-                      onChange={(e) => setInterestForm({ ...interestForm, tagline: e.target.value })}
+onChange={(e) => setInterestForm({ ...interestForm, tagline: e.target.value })}
                       placeholder="e.g. Good Coffee, Late-Night Brainstorms"
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-red-500 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
-                {/* Media Image Link Field for Interest */}
-                <div className="space-y-1.5 p-3.5 bg-neutral-900/80 rounded border border-neutral-800">
-                  <label className="block text-red-400 font-bold uppercase flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Link Foto Kegiatan / Dokumentasi (URL)</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={interestForm.imageUrl || ''}
-                    onChange={(e) => setInterestForm({ ...interestForm, imageUrl: e.target.value })}
-                    placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white focus:border-red-500 focus:outline-hidden"
-                  />
-
-                  {interestForm.imageUrl && (
-                    <div className="mt-2 pt-2 border-t border-neutral-800 flex items-center gap-3">
-                      <div className="w-20 h-14 bg-neutral-950 rounded border border-neutral-700 overflow-hidden shrink-0">
-                        <img
-                          src={interestForm.imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget.parentElement as HTMLElement).innerHTML = '<div class="text-[9px] text-red-400 p-1 text-center">Invalid Link</div>';
-                          }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-red-400 font-mono">
-                        ✓ Pratinjau Foto Terdeteksi
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* Media Image Link & Framing Controls for Interests */}
+                <ImageFramingInput
+                  label="Link Foto Kegiatan / Dokumentasi & Posisi Framing (URL)"
+                  themeColor="red"
+                  imageUrl={interestForm.imageUrl || ''}
+                  placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
+                  helpText="Masukkan URL foto kegiatan, dokumentasi ekspedisi, atau suasana santai."
+                  posX={interestForm.imagePosX ?? 50}
+                  posY={interestForm.imagePosY ?? 50}
+                  scale={interestForm.imageScale ?? 100}
+                  onImageUrlChange={(url) => setInterestForm({ ...interestForm, imageUrl: url })}
+                  onPositionChange={(posX, posY, scale) =>
+                    setInterestForm({ ...interestForm, imagePosX: posX, imagePosY: posY, imageScale: scale })
+                  }
+                  aspectRatio="4/3"
+                />
 
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">
@@ -2603,24 +2843,34 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                <div className="flex items-center gap-3 pt-3">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full sm:flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold uppercase rounded shadow-md transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>SIMPAN CATATAN MINAT</span>
+                    {loading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{editingInterestId ? 'Simpan Perubahan Minat' : 'Tambah Minat Baru'}</span>
+                      </>
+                    )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenPreview('interests')}
-                    className="w-full sm:w-auto px-5 py-3 bg-neutral-800 hover:bg-neutral-700 text-red-300 font-bold uppercase rounded border border-neutral-700 hover:border-red-600 transition-all flex items-center justify-center gap-2 shrink-0"
-                    title="Pratinjau Dossier #02"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Pratinjau Dossier</span>
-                  </button>
+
+                  {editingInterestId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingInterestId(null);
+                        setInterestForm(initialInterestForm);
+                      }}
+                      className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded uppercase font-bold transition-colors"
+                    >
+                      Batal
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
@@ -2655,7 +2905,15 @@ export default function AdminPage() {
 
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
-                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          style={{
+                            objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
+                            transform: `scale(${(item.imageScale ?? 100) / 100})`,
+                          }}
+                          className="w-full h-full object-cover transition-all duration-150 origin-center"
+                        />
                       </div>
                     )}
 

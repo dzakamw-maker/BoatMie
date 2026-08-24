@@ -68,10 +68,15 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
             {/* Avatar / Portrait Photo */}
             <div className="relative aspect-square w-full bg-gradient-to-br from-neutral-800 to-neutral-950 rounded-sm overflow-hidden flex flex-col items-center justify-center text-white text-center shadow-inner border border-neutral-700 group">
               {about.avatarUrl ? (
-                <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                   <img
                     src={about.avatarUrl}
                     alt={about.name || 'Avatar'}
+                    style={{
+                      objectPosition: `${about.avatarPosX ?? 50}% ${about.avatarPosY ?? 50}%`,
+                      transformOrigin: `${about.avatarPosX ?? 50}% ${about.avatarPosY ?? 50}%`,
+                      transform: `scale(${(about.avatarScale ?? 100) / 100})`,
+                    }}
                     className="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-300"
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = 'none';

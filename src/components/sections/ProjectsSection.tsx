@@ -250,7 +250,12 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                 <img
                   src={selectedProject.imageUrl}
                   alt={selectedProject.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                  style={{
+                    objectPosition: `${selectedProject.imagePosX ?? 50}% ${selectedProject.imagePosY ?? 50}%`,
+                    transformOrigin: `${selectedProject.imagePosX ?? 50}% ${selectedProject.imagePosY ?? 50}%`,
+                    transform: `scale(${(selectedProject.imageScale ?? 100) / 100})`,
+                  }}
+                  className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
                     (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
                   }}

@@ -172,7 +172,12 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
                 <img
                   src={activeInterest.imageUrl}
                   alt={activeInterest.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  style={{
+                    objectPosition: `${activeInterest.imagePosX ?? 50}% ${activeInterest.imagePosY ?? 50}%`,
+                    transformOrigin: `${activeInterest.imagePosX ?? 50}% ${activeInterest.imagePosY ?? 50}%`,
+                    transform: `scale(${(activeInterest.imageScale ?? 100) / 100})`,
+                  }}
+                  className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
                     (e.currentTarget.parentElement?.parentElement as HTMLElement).style.display = 'none';
                   }}

@@ -23,6 +23,9 @@ export interface ProjectItem {
   repoUrl?: string;
   liveUrl?: string;
   imageUrl?: string;
+  imagePosX?: number;
+  imagePosY?: number;
+  imageScale?: number;
   featured?: boolean;
   date: string;
   metrics?: { label: string; value: string }[];
@@ -40,6 +43,9 @@ export interface CertificateItem {
   skills: string[];
   verificationUrl?: string;
   imageUrl?: string;
+  imagePosX?: number;
+  imagePosY?: number;
+  imageScale?: number;
 }
 
 export interface SkillCategory {
@@ -62,6 +68,9 @@ export interface InterestItem {
   details: string[];
   fieldNotes: string[];
   imageUrl?: string;
+  imagePosX?: number;
+  imagePosY?: number;
+  imageScale?: number;
 }
 
 export interface ContactMessage {
@@ -88,6 +97,9 @@ export interface AboutData {
   name: string;
   alias: string;
   avatarUrl: string;
+  avatarPosX?: number;
+  avatarPosY?: number;
+  avatarScale?: number;
   role: string;
   status: string;
   location: string;

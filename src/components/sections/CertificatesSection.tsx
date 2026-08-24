@@ -232,7 +232,12 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                 <img
                   src={selectedCert.imageUrl}
                   alt={selectedCert.title}
-                  className="w-full h-full object-cover"
+                  style={{
+                    objectPosition: `${selectedCert.imagePosX ?? 50}% ${selectedCert.imagePosY ?? 50}%`,
+                    transformOrigin: `${selectedCert.imagePosX ?? 50}% ${selectedCert.imagePosY ?? 50}%`,
+                    transform: `scale(${(selectedCert.imageScale ?? 100) / 100})`,
+                  }}
+                  className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
                     (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
                   }}
