@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { FolderId, FolderConfig } from '@/types/dossier';
@@ -211,19 +210,10 @@ export const FolderCaseView: React.FC<FolderCaseViewProps> = ({
           </div>
 
           {/* Quick Info Box on Right Sidebar */}
-          <div className="mt-4 p-3.5 bg-neutral-900 rounded border border-neutral-800 font-mono text-[11px] text-neutral-400 space-y-2 hidden lg:block">
+          <div className="mt-4 p-3.5 bg-neutral-900 rounded border border-neutral-800 font-mono text-[11px] text-neutral-400 space-y-1.5 hidden lg:block">
             <div className="font-bold text-neutral-200 uppercase">KEYBOARD SHORTCUTS</div>
             <div>[ESC] Overview Stack</div>
             <div>[← / →] Prev / Next File</div>
-            <div className="pt-2 border-t border-neutral-800">
-              <Link
-                href="/admin"
-                className="text-neutral-600 hover:text-neutral-300 transition-colors text-[10px] block"
-                title="Classified Dossier Console"
-              >
-                [🔒 CLASSIFIED // ACCESS]
-              </Link>
-            </div>
           </div>
         </aside>
       </main>
