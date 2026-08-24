@@ -173,12 +173,6 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
         {/* Right Column: Editorial Bio & Focus Areas (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           <div>
-            {about.alias && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 font-mono text-xs font-bold uppercase tracking-widest border border-blue-300 mb-2">
-                <span>CALLSIGN / ALIAS:</span>
-                <span className="text-blue-700 font-black">{about.alias}</span>
-              </div>
-            )}
             <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl uppercase tracking-wide text-neutral-950 leading-none mb-3">
               {about.name || 'DZAKA'}
             </h1>
