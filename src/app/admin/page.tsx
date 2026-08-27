@@ -143,6 +143,12 @@ function ImageFramingInput({
       ? 'aspect-[4/3] w-36'
       : 'aspect-square w-32';
 
+  const [isValid, setIsValid] = useState(true);
+
+  useEffect(() => {
+    setIsValid(true);
+  }, [imageUrl]);
+
   return (
     <div className="space-y-3 p-4 bg-neutral-900/90 rounded border border-neutral-800">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -174,22 +180,23 @@ function ImageFramingInput({
           <div className="md:col-span-4 flex flex-col items-center justify-center p-3 bg-neutral-950/90 rounded border border-neutral-800">
             <span className="text-[10px] uppercase font-mono text-neutral-400 mb-2">Live Dossier Frame</span>
             <div className={`relative ${aspectClass} bg-neutral-900 rounded-sm border-2 ${t.frameBorder} overflow-hidden shadow-inner flex items-center justify-center`}>
-              <img
-                src={imageUrl}
-                alt="Preview"
-                style={{
-                  objectPosition: `${posX}% ${posY}%`,
-                  transformOrigin: `${posX}% ${posY}%`,
-                  transform: `scale(${scale / 100})`,
-                }}
-                className={`w-full h-full object-cover transition-all duration-150 ${
-                  showGrayscalePreview ? 'grayscale contrast-110' : ''
-                }`}
-                onError={(e) => {
-                  (e.currentTarget.parentElement as HTMLElement).innerHTML =
-                    '<div class="text-[9px] text-red-400 p-2 text-center">URL Tidak Valid</div>';
-                }}
-              />
+              {isValid ? (
+                <img
+                  src={imageUrl}
+                  alt="Preview"
+                  style={{
+                    objectPosition: `${posX}% ${posY}%`,
+                    transformOrigin: `${posX}% ${posY}%`,
+                    transform: `scale(${scale / 100})`,
+                  }}
+                  className={`w-full h-full object-cover transition-all duration-150 ${
+                    showGrayscalePreview ? 'grayscale contrast-110' : ''
+                  }`}
+                  onError={() => setIsValid(false)}
+                />
+              ) : (
+                <div className="text-[9px] text-red-400 p-2 text-center">URL Tidak Valid</div>
+              )}
             </div>
             <span className="text-[9px] text-neutral-400 font-mono mt-2 text-center">
               X: {posX}% | Y: {posY}% | Zoom: {scale}%
@@ -742,15 +749,18 @@ export default function AdminPage() {
 
   // Check existing session via secure server-side API (HttpOnly Cookie)
   useEffect(() => {
-    fetch('/api/admin/auth')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated) {
+    import('firebase/auth').then(({ getAuth, onAuthStateChanged }) => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
           setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
-      })
-      .catch((err) => console.error('Error verifying admin session:', err))
-      .finally(() => setCheckingSession(false));
+        setCheckingSession(false);
+      });
+      return () => unsubscribe();
+    });
   }, []);
 
   // Fetch data when authenticated
@@ -798,29 +808,34 @@ export default function AdminPage() {
     }, 4500);
   };
 
+  const [emailInput, setEmailInput] = useState('');
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setAuthError('');
 
     try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinInput }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsAuthenticated(true);
-        setPinInput('');
-        setAuthError('');
+      const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+      const auth = getAuth();
+      await signInWithEmailAndPassword(auth, emailInput, pinInput);
+      
+      setIsAuthenticated(true);
+      setPinInput('');
+      setEmailInput('');
+      setAuthError('');
+    } catch (err: any) {
+      if (err.code === 'auth/too-many-requests') {
+        setAuthError('Terlalu banyak percobaan login. Coba lagi nanti.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setAuthError('Email/Password provider belum diaktifkan di Firebase Console.');
+      } else if (err.code === 'auth/invalid-email') {
+        setAuthError('Format email tidak valid.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setAuthError('Gagal terhubung ke Firebase. Periksa koneksi internet Anda.');
       } else {
-        setAuthError(data.error || 'Passcode otorisasi salah. Akses ditolak.');
+        setAuthError('Email atau Password salah / User belum didaftarkan di Firebase.');
       }
-    } catch (err) {
-      setAuthError('Gagal terhubung ke server otorisasi.');
     } finally {
       setLoading(false);
     }
@@ -828,12 +843,14 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/auth', { method: 'DELETE' });
+      const { getAuth, signOut } = await import('firebase/auth');
+      await signOut(getAuth());
     } catch (err) {
       console.error('Error during logout:', err);
     }
     setIsAuthenticated(false);
     setPinInput('');
+    setEmailInput('');
   };
 
   // -------------------------------------------------------------
@@ -1221,7 +1238,7 @@ export default function AdminPage() {
               CLASSIFIED ACCESS
             </h1>
             <p className="font-serif text-xs text-neutral-400">
-              Masukkan security PIN untuk mengakses konsol kontrol arsip portofolio.
+              Masukkan Email dan Password akun Firebase Admin Anda.
             </p>
           </div>
 
@@ -1234,8 +1251,24 @@ export default function AdminPage() {
             )}
 
             <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-neutral-400 uppercase font-bold">
+                ADMIN EMAIL
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="admin@example.com"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded text-white text-center text-lg tracking-widest placeholder:text-neutral-600 focus:outline-hidden focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-1.5">
               <label htmlFor="pin" className="block text-neutral-400 uppercase font-bold">
-                SECURITY PIN / PASSCODE
+                PASSWORD
               </label>
               <input
                 id="pin"
@@ -1245,7 +1278,6 @@ export default function AdminPage() {
                 onChange={(e) => setPinInput(e.target.value)}
                 placeholder="••••••••"
                 className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded text-white text-center text-lg tracking-widest placeholder:text-neutral-600 focus:outline-hidden focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
-                autoFocus
               />
             </div>
 

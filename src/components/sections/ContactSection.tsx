@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CONTACT_DATA } from '@/data/dossierData';
-import { submitMessage, fetchContact } from '@/lib/firestore';
+import { fetchContact } from '@/lib/firestore';
 import { ContactInfo } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
@@ -63,11 +63,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
     setIsSubmitting(true);
 
     try {
-      const res = await submitMessage(formState);
-      if (res.success) {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formState)
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
         setIsSubmitted(true);
       } else {
-        setError(res.error || 'Gagal mengirim transmisi ke server.');
+        setError(data.error || 'Gagal mengirim transmisi ke server.');
       }
     } catch {
       setError('Terjadi kesalahan koneksi jaringan.');
