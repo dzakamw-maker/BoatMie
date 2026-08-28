@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ABOUT_DATA } from '@/data/dossierData';
-import { fetchAbout } from '@/lib/firestore';
+import { fetchAbout, normalizeImageUrl } from '@/lib/firestore';
 import { AboutData } from '@/types/dossier';
 import { PaperClip } from '../common/PaperClip';
 import { StampBadge } from '../common/StampBadge';
@@ -70,8 +70,9 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
               {about.avatarUrl ? (
                 <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                   <img
-                    src={about.avatarUrl}
+                    src={normalizeImageUrl(about.avatarUrl)}
                     alt={about.name || 'Avatar'}
+                    referrerPolicy="no-referrer"
                     style={{
                       objectPosition: `${about.avatarPosX ?? 50}% ${about.avatarPosY ?? 50}%`,
                       transformOrigin: `${about.avatarPosX ?? 50}% ${about.avatarPosY ?? 50}%`,
@@ -79,7 +80,15 @@ export const AboutSection: React.FC<AboutSectionProps> = ({
                     }}
                     className="w-full h-full object-cover grayscale contrast-110 group-hover:grayscale-0 transition-all duration-300"
                     onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = 'none';
+                      const target = e.currentTarget;
+                      if (target.src.includes('lh3.googleusercontent.com/d/')) {
+                        const fileId = target.src.split('lh3.googleusercontent.com/d/')[1];
+                        if (fileId) {
+                          target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                          return;
+                        }
+                      }
+                      (target as HTMLElement).style.display = 'none';
                       const fallback = document.getElementById('avatar-fallback');
                       if (fallback) fallback.style.display = 'flex';
                     }}

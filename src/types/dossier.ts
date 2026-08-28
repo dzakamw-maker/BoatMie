@@ -32,13 +32,23 @@ export interface ProjectItem {
   status: 'Deployed' | 'Active Development' | 'Archived';
 }
 
+export type CertificateCategory =
+  | 'Kompetensi'
+  | 'Pelatihan'
+  | 'Bahasa'
+  | 'Organisasi'
+  | 'Magang'
+  | 'Kejuaraan'
+  | 'Lainnya'
+  | (string & {});
+
 export interface CertificateItem {
   id: string;
   title: string;
   issuer: string;
   issueDate: string;
   credentialId: string;
-  category: 'Competition' | 'AI & ML' | 'Fullstack' | 'IT Fundamentals';
+  category: CertificateCategory;
   description: string;
   skills: string[];
   verificationUrl?: string;

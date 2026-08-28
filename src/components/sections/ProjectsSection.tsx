@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PROJECTS_DATA } from '@/data/dossierData';
-import { fetchProjects } from '@/lib/firestore';
+import { fetchProjects, normalizeImageUrl } from '@/lib/firestore';
 import { ProjectItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -36,6 +36,13 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
+  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
+
+  const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0] || PROJECTS_DATA[0];
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [selectedProject?.id, selectedProject?.imageUrl]);
 
   useEffect(() => {
     if (previewProjects) {
@@ -54,8 +61,6 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
       }
     });
   }, [previewProjects, initialSelectedId]);
-
-  const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0] || PROJECTS_DATA[0];
 
   // Close modal on Escape key press
   useEffect(() => {
@@ -245,11 +250,13 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
         {/* Narrative & Case Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-4">
-            {selectedProject.imageUrl && (
+            {selectedProject.imageUrl && !imageLoadError && (
               <div className="relative aspect-video w-full rounded border border-neutral-300 overflow-hidden bg-neutral-100 shadow-inner group mb-2">
                 <img
-                  src={selectedProject.imageUrl}
+                  key={`${selectedProject.id}-${selectedProject.imageUrl}`}
+                  src={normalizeImageUrl(selectedProject.imageUrl)}
                   alt={selectedProject.title}
+                  referrerPolicy="no-referrer"
                   style={{
                     objectPosition: `${selectedProject.imagePosX ?? 50}% ${selectedProject.imagePosY ?? 50}%`,
                     transformOrigin: `${selectedProject.imagePosX ?? 50}% ${selectedProject.imagePosY ?? 50}%`,
@@ -257,7 +264,20 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                   }}
                   className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
-                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    const target = e.currentTarget;
+                    const currentSrc = target.src;
+                    const fileIdMatch = currentSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
+                    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+                    if (fileId) {
+                      if (currentSrc.includes('lh3.googleusercontent.com')) {
+                        target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                        return;
+                      } else if (currentSrc.includes('thumbnail')) {
+                        target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                        return;
+                      }
+                    }
+                    setImageLoadError(true);
                   }}
                 />
               </div>

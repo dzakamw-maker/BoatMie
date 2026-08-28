@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { CERTIFICATES_DATA } from '@/data/dossierData';
-import { fetchCertificates } from '@/lib/firestore';
+import { fetchCertificates, sortCertificatesByDate, formatCertificateDisplayDate, normalizeImageUrl } from '@/lib/firestore';
 import { CertificateItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -29,34 +29,47 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
   previewCertificates,
   initialSelectedId,
 }) => {
-  const [certificates, setCertificates] = useState<CertificateItem[]>(previewCertificates || CERTIFICATES_DATA);
+  const initialSorted = useMemo(
+    () => sortCertificatesByDate(previewCertificates || CERTIFICATES_DATA),
+    [previewCertificates]
+  );
+  const [certificates, setCertificates] = useState<CertificateItem[]>(initialSorted);
   const [selectedCertId, setSelectedCertId] = useState<string>(
-    initialSelectedId || previewCertificates?.[0]?.id || CERTIFICATES_DATA[0].id
+    initialSelectedId || initialSorted[0]?.id || CERTIFICATES_DATA[0].id
   );
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalCategoryFilter, setModalCategoryFilter] = useState<string>('ALL');
+  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
+
+  const selectedCert =
+    certificates.find((c) => c.id === selectedCertId) || certificates[0] || CERTIFICATES_DATA[0];
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [selectedCert?.id, selectedCert?.imageUrl]);
 
   useEffect(() => {
     if (previewCertificates) {
-      setCertificates(previewCertificates);
+      const sorted = sortCertificatesByDate(previewCertificates);
+      setCertificates(sorted);
       if (initialSelectedId) {
         setSelectedCertId(initialSelectedId);
-      } else if (previewCertificates.length > 0 && !previewCertificates.some((c) => c.id === selectedCertId)) {
-        setSelectedCertId(previewCertificates[0].id);
+      } else if (sorted.length > 0 && !sorted.some((c) => c.id === selectedCertId)) {
+        setSelectedCertId(sorted[0].id);
       }
       return;
     }
     fetchCertificates().then((data) => {
       if (data && data.length > 0) {
-        setCertificates(data);
-        if (!selectedCertId) setSelectedCertId(data[0].id);
+        const sorted = sortCertificatesByDate(data);
+        setCertificates(sorted);
+        if (!selectedCertId || !sorted.some((c) => c.id === selectedCertId)) {
+          setSelectedCertId(sorted[0].id);
+        }
       }
     });
   }, [previewCertificates, initialSelectedId]);
-
-  const selectedCert =
-    certificates.find((c) => c.id === selectedCertId) || certificates[0] || CERTIFICATES_DATA[0];
 
   // Close modal on Escape key press
   useEffect(() => {
@@ -155,7 +168,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                   <span className="px-2 py-0.5 bg-amber-100 rounded font-bold uppercase">
                     {cert.category}
                   </span>
-                  <span className="text-neutral-500 font-bold">{cert.issueDate}</span>
+                  <span className="text-neutral-500 font-bold">{formatCertificateDisplayDate(cert.issueDate)}</span>
                 </div>
 
                 <h3 className="font-sans text-lg sm:text-xl text-neutral-950 uppercase tracking-wide leading-tight mb-1.5">
@@ -227,11 +240,13 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
           </div>
 
           <div className="md:col-span-4 flex flex-col items-center justify-center p-6 bg-amber-50/50 rounded border border-amber-200 text-center space-y-3">
-            {selectedCert.imageUrl && (
+            {selectedCert.imageUrl && !imageLoadError && (
               <div className="w-full aspect-[4/3] rounded border border-amber-300/80 overflow-hidden bg-white shadow-xs mb-1">
                 <img
-                  src={selectedCert.imageUrl}
+                  key={`${selectedCert.id}-${selectedCert.imageUrl}`}
+                  src={normalizeImageUrl(selectedCert.imageUrl)}
                   alt={selectedCert.title}
+                  referrerPolicy="no-referrer"
                   style={{
                     objectPosition: `${selectedCert.imagePosX ?? 50}% ${selectedCert.imagePosY ?? 50}%`,
                     transformOrigin: `${selectedCert.imagePosX ?? 50}% ${selectedCert.imagePosY ?? 50}%`,
@@ -239,7 +254,20 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                   }}
                   className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
-                    (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                    const target = e.currentTarget;
+                    const currentSrc = target.src;
+                    const fileIdMatch = currentSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
+                    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+                    if (fileId) {
+                      if (currentSrc.includes('lh3.googleusercontent.com')) {
+                        target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                        return;
+                      } else if (currentSrc.includes('thumbnail')) {
+                        target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                        return;
+                      }
+                    }
+                    setImageLoadError(true);
                   }}
                 />
               </div>
@@ -247,7 +275,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
             <StampBadge text="OFFICIAL SEAL // VERIFIED" variant="amber" rotate={-4} />
             <div className="font-mono text-[11px] text-neutral-600 space-y-1">
               <div>REGISTRY: {selectedCert.credentialId}</div>
-              <div>YEAR: {selectedCert.issueDate}</div>
+              <div>DATE: {formatCertificateDisplayDate(selectedCert.issueDate)}</div>
               <div>STATUS: VALID & ACTIVE</div>
             </div>
           </div>
@@ -368,7 +396,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
                             <span className="px-2 py-0.5 bg-amber-100 rounded font-bold uppercase">
                               {cert.category}
                             </span>
-                            <span className="text-neutral-500 font-bold">{cert.issueDate}</span>
+                            <span className="text-neutral-500 font-bold">{formatCertificateDisplayDate(cert.issueDate)}</span>
                           </div>
 
                           <h4 className="font-sans text-lg uppercase tracking-wide text-neutral-950 mb-1 leading-tight">

@@ -42,7 +42,7 @@ export async function fetchAbout(): Promise<AboutData> {
       return {
         name: d.name || ABOUT_DATA.name,
         alias: d.alias || ABOUT_DATA.alias,
-        avatarUrl: d.avatarUrl || d.avatar_url || ABOUT_DATA.avatarUrl,
+        avatarUrl: normalizeImageUrl(d.avatarUrl || d.avatar_url || ABOUT_DATA.avatarUrl),
         avatarPosX: typeof d.avatarPosX === 'number' ? d.avatarPosX : (typeof d.avatar_pos_x === 'number' ? d.avatar_pos_x : (ABOUT_DATA.avatarPosX ?? 50)),
         avatarPosY: typeof d.avatarPosY === 'number' ? d.avatarPosY : (typeof d.avatar_pos_y === 'number' ? d.avatar_pos_y : (ABOUT_DATA.avatarPosY ?? 50)),
         avatarScale: typeof d.avatarScale === 'number' ? d.avatarScale : (typeof d.avatar_scale === 'number' ? d.avatar_scale : (ABOUT_DATA.avatarScale ?? 100)),
@@ -91,7 +91,7 @@ export async function fetchInterests(): Promise<InterestItem[]> {
           title: d.title || '',
           tagline: d.tagline || '',
           badge: d.badge || '',
-          imageUrl: d.imageUrl || d.image_url || '',
+          imageUrl: normalizeImageUrl(d.imageUrl || d.image_url || ''),
           imagePosX: typeof d.imagePosX === 'number' ? d.imagePosX : (typeof d.image_pos_x === 'number' ? d.image_pos_x : 50),
           imagePosY: typeof d.imagePosY === 'number' ? d.imagePosY : (typeof d.image_pos_y === 'number' ? d.image_pos_y : 50),
           imageScale: typeof d.imageScale === 'number' ? d.imageScale : (typeof d.image_scale === 'number' ? d.image_scale : 100),
@@ -200,7 +200,7 @@ export async function fetchProjects(): Promise<ProjectItem[]> {
           techStack: d.techStack || d.tech_stack || [],
           repoUrl: d.repoUrl || d.repo_url || d.repo_link || '',
           liveUrl: d.liveUrl || d.live_url || d.live_link || '',
-          imageUrl: d.imageUrl || d.image_url || '',
+          imageUrl: normalizeImageUrl(d.imageUrl || d.image_url || ''),
           imagePosX: typeof d.imagePosX === 'number' ? d.imagePosX : (typeof d.image_pos_x === 'number' ? d.image_pos_x : 50),
           imagePosY: typeof d.imagePosY === 'number' ? d.imagePosY : (typeof d.image_pos_y === 'number' ? d.image_pos_y : 50),
           imageScale: typeof d.imageScale === 'number' ? d.imageScale : (typeof d.image_scale === 'number' ? d.image_scale : 100),
@@ -248,12 +248,138 @@ export async function deleteProject(id: string): Promise<{ success: boolean; err
 // ==========================================
 // 5. FILE-05: CERTIFICATES (Table: `certificates`)
 // ==========================================
+export function parseCertificateDate(dateStr?: string): number {
+  if (!dateStr) return 0;
+  const raw = dateStr.trim();
+  if (!raw) return 0;
+
+  const parsed = Date.parse(raw);
+  if (!isNaN(parsed)) {
+    return parsed;
+  }
+
+  const indonesianMonths: Record<string, string> = {
+    januari: 'Jan', jan: 'Jan',
+    februari: 'Feb', feb: 'Feb',
+    maret: 'Mar', mar: 'Mar',
+    april: 'Apr', apr: 'Apr',
+    mei: 'May',
+    juni: 'Jun', jun: 'Jun',
+    juli: 'Jul', jul: 'Jul',
+    agustus: 'Aug', agu: 'Aug', ags: 'Aug',
+    september: 'Sep', sep: 'Sep',
+    oktober: 'Oct', okt: 'Oct',
+    november: 'Nov', nov: 'Nov',
+    desember: 'Dec', des: 'Dec',
+  };
+
+  let normalized = raw;
+  for (const [idm, enm] of Object.entries(indonesianMonths)) {
+    normalized = normalized.replace(new RegExp(`\\b${idm}\\b`, 'gi'), enm);
+  }
+
+  const idParsed = Date.parse(normalized);
+  if (!isNaN(idParsed)) {
+    return idParsed;
+  }
+
+  const years = raw.match(/\b(19\d\d|20\d\d)\b/g);
+  if (years && years.length > 0) {
+    const maxYear = Math.max(...years.map(Number));
+    return new Date(maxYear, 0, 1).getTime();
+  }
+
+  return 0;
+}
+
+export function formatDateForInput(dateStr?: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^\d{4}$/.test(trimmed)) {
+    return `${trimmed}-01-01`;
+  }
+  const ts = parseCertificateDate(trimmed);
+  if (ts > 0) {
+    const d = new Date(ts);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return '';
+}
+
+export function formatCertificateDisplayDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  if (/^\d{4}$/.test(trimmed) || /^\d{4}[–-]\d{4}$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+  }
+  return trimmed;
+}
+
+export function normalizeImageUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  // Google Drive file view links e.g. drive.google.com/file/d/FILE_ID/view...
+  const gDriveFileMatch = trimmed.match(/(?:drive|docs)\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (gDriveFileMatch && gDriveFileMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${gDriveFileMatch[1]}`;
+  }
+
+  // Google Drive query links e.g. drive.google.com/open?id=FILE_ID or drive.google.com/uc?id=FILE_ID
+  const gDriveQueryMatch = trimmed.match(/(?:drive|docs)\.google\.com\/(?:open|uc|thumbnail)\?(?:[^&]*&)*id=([a-zA-Z0-9_-]+)/i);
+  if (gDriveQueryMatch && gDriveQueryMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${gDriveQueryMatch[1]}`;
+  }
+
+  // Google usercontent links e.g. lh3.googleusercontent.com/d/FILE_ID
+  const lh3Match = trimmed.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/i);
+  if (lh3Match && lh3Match[1]) {
+    return `https://lh3.googleusercontent.com/d/${lh3Match[1]}`;
+  }
+
+  // Dropbox links (convert ?dl=0 to ?raw=1)
+  if (trimmed.includes('dropbox.com')) {
+    return trimmed.replace(/\?dl=0/i, '?raw=1').replace(/&dl=0/i, '&raw=1');
+  }
+
+  return trimmed;
+}
+
+export function sortCertificatesByDate(certs: CertificateItem[]): CertificateItem[] {
+  return [...certs].sort((a, b) => {
+    const timeA = parseCertificateDate(a.issueDate);
+    const timeB = parseCertificateDate(b.issueDate);
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return (a.title || '').localeCompare(b.title || '');
+  });
+}
+
 export async function fetchCertificates(): Promise<CertificateItem[]> {
   try {
-    const q = query(collection(db, 'certificates'), orderBy('sort_order', 'asc'));
+    const q = query(collection(db, 'certificates'));
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
-      return snapshot.docs.map((docSnap) => {
+      const items = snapshot.docs.map((docSnap) => {
         const d = docSnap.data();
         return {
           id: docSnap.id,
@@ -261,22 +387,23 @@ export async function fetchCertificates(): Promise<CertificateItem[]> {
           issuer: d.issuer || '',
           issueDate: d.issueDate || d.issue_date || '',
           credentialId: d.credentialId || d.credential_id || '',
-          category: d.category || 'Fullstack',
+          category: d.category || 'Kompetensi',
           description: d.description || '',
           skills: d.skills || [],
           verificationUrl: d.verificationUrl || d.verification_url || '',
-          imageUrl: d.imageUrl || d.image_url || '',
+          imageUrl: normalizeImageUrl(d.imageUrl || d.image_url || ''),
           imagePosX: typeof d.imagePosX === 'number' ? d.imagePosX : (typeof d.image_pos_x === 'number' ? d.image_pos_x : 50),
           imagePosY: typeof d.imagePosY === 'number' ? d.imagePosY : (typeof d.image_pos_y === 'number' ? d.image_pos_y : 50),
           imageScale: typeof d.imageScale === 'number' ? d.imageScale : (typeof d.image_scale === 'number' ? d.image_scale : 100),
           sort_order: d.sort_order ?? 0,
         } as CertificateItem;
       });
+      return sortCertificatesByDate(items);
     }
   } catch (err) {
     console.warn('Firestore fetch certificates fallback to static data:', err);
   }
-  return CERTIFICATES_DATA;
+  return sortCertificatesByDate(CERTIFICATES_DATA);
 }
 
 export async function saveCertificate(cert: CertificateItem): Promise<{ success: boolean; id?: string; error?: string }> {

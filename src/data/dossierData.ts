@@ -324,24 +324,12 @@ export const PROJECTS_DATA: ProjectItem[] = [
 
 export const CERTIFICATES_DATA: CertificateItem[] = [
   {
-    id: 'isqo-olympiad',
-    title: 'ISQO (Indonesian Science & Quality Olympiad)',
-    issuer: 'Indonesian Science & Olympiad Committee',
-    issueDate: '2024',
-    credentialId: 'ISQO-REG-8829-ID',
-    category: 'Competition',
-    imageUrl: '/media/certificates/isqo.jpg',
-    description:
-      'Prestigious national academic olympiad recognizing excellence in analytical problem solving, logical deduction, and scientific reasoning.',
-    skills: ['Analytical Thinking', 'Complex Problem Solving', 'Mathematics & Logic'],
-  },
-  {
     id: 'ai-prompt-mastery',
     title: 'AI Engineering & Prompt Architecture Certification',
     issuer: 'Google & Developer Ecosystem Program',
     issueDate: '2025',
     credentialId: 'GDEV-AI-9941-CERT',
-    category: 'AI & ML',
+    category: 'Pelatihan',
     imageUrl: '/media/certificates/ai-prompt.jpg',
     description:
       'Mastery of multi-modal generative AI pipelines, structured function calling with Gemini API, and system prompt engineering.',
@@ -353,7 +341,7 @@ export const CERTIFICATES_DATA: CertificateItem[] = [
     issuer: 'National PPLG / Vocational Competency Standards',
     issueDate: '2025',
     credentialId: 'VOC-PPLG-4421-FS',
-    category: 'Fullstack',
+    category: 'Kompetensi',
     imageUrl: '/media/certificates/fullstack.jpg',
     description:
       'Certified competency in end-to-end web engineering: relational databases, secure authentication, reactive SPAs, and production deployment.',
@@ -365,11 +353,23 @@ export const CERTIFICATES_DATA: CertificateItem[] = [
     issuer: 'Cloud Practitioner Track',
     issueDate: '2025',
     credentialId: 'CLD-INF-3312-VCL',
-    category: 'IT Fundamentals',
+    category: 'Pelatihan',
     imageUrl: '/media/certificates/cloud.jpg',
     description:
       'Comprehensive verification in serverless architecture, CI/CD automated test workflows, domain routing, and web edge performance.',
     skills: ['Vercel Edge', 'GitHub Actions', 'Serverless Functions', 'DNS & SSL'],
+  },
+  {
+    id: 'isqo-olympiad',
+    title: 'ISQO (Indonesian Science & Quality Olympiad)',
+    issuer: 'Indonesian Science & Olympiad Committee',
+    issueDate: '2024',
+    credentialId: 'ISQO-REG-8829-ID',
+    category: 'Kejuaraan',
+    imageUrl: '/media/certificates/isqo.jpg',
+    description:
+      'Prestigious national academic olympiad recognizing excellence in analytical problem solving, logical deduction, and scientific reasoning.',
+    skills: ['Analytical Thinking', 'Complex Problem Solving', 'Mathematics & Logic'],
   },
 ];
 

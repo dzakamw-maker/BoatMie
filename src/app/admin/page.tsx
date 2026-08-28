@@ -16,6 +16,10 @@ import {
   saveProject,
   deleteProject,
   fetchCertificates,
+  sortCertificatesByDate,
+  formatDateForInput,
+  formatCertificateDisplayDate,
+  normalizeImageUrl,
   saveCertificate,
   deleteCertificate,
   fetchSkillCategories,
@@ -144,9 +148,13 @@ function ImageFramingInput({
       : 'aspect-square w-32';
 
   const [isValid, setIsValid] = useState(true);
+  const [previewSrc, setPreviewSrc] = useState(normalizeImageUrl(imageUrl));
+  const [fallbackAttempted, setFallbackAttempted] = useState(false);
 
   useEffect(() => {
     setIsValid(true);
+    setPreviewSrc(normalizeImageUrl(imageUrl));
+    setFallbackAttempted(false);
   }, [imageUrl]);
 
   return (
@@ -167,7 +175,7 @@ function ImageFramingInput({
         <input
           type="text"
           value={imageUrl || ''}
-          onChange={(e) => onImageUrlChange(e.target.value)}
+          onChange={(e) => onImageUrlChange(normalizeImageUrl(e.target.value))}
           placeholder={placeholder || 'https://... atau /media/...'}
           className={`w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded text-white ${t.borderFocus} focus:outline-hidden text-xs`}
         />
@@ -180,10 +188,11 @@ function ImageFramingInput({
           <div className="md:col-span-4 flex flex-col items-center justify-center p-3 bg-neutral-950/90 rounded border border-neutral-800">
             <span className="text-[10px] uppercase font-mono text-neutral-400 mb-2">Live Dossier Frame</span>
             <div className={`relative ${aspectClass} bg-neutral-900 rounded-sm border-2 ${t.frameBorder} overflow-hidden shadow-inner flex items-center justify-center`}>
-              {isValid ? (
+              {isValid && previewSrc ? (
                 <img
-                  src={imageUrl}
+                  src={previewSrc}
                   alt="Preview"
+                  referrerPolicy="no-referrer"
                   style={{
                     objectPosition: `${posX}% ${posY}%`,
                     transformOrigin: `${posX}% ${posY}%`,
@@ -192,10 +201,27 @@ function ImageFramingInput({
                   className={`w-full h-full object-cover transition-all duration-150 ${
                     showGrayscalePreview ? 'grayscale contrast-110' : ''
                   }`}
-                  onError={() => setIsValid(false)}
+                  onError={() => {
+                    // Try alternate Google Drive endpoints if one fails
+                    const fileIdMatch = previewSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
+                    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+                    if (fileId && !fallbackAttempted) {
+                      setFallbackAttempted(true);
+                      if (previewSrc.includes('thumbnail')) {
+                        setPreviewSrc(`https://lh3.googleusercontent.com/d/${fileId}`);
+                      } else {
+                        setPreviewSrc(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`);
+                      }
+                      return;
+                    }
+                    setIsValid(false);
+                  }}
                 />
               ) : (
-                <div className="text-[9px] text-red-400 p-2 text-center">URL Tidak Valid</div>
+                <div className="text-[9px] text-red-400 p-2 text-center leading-tight font-sans">
+                  <span className="font-bold block mb-0.5">URL Tidak Dapat Dimuat</span>
+                  <span className="text-[8px] text-neutral-400 font-mono">Pastikan izin Google Drive: &quot;Siapa saja yang memiliki link&quot;</span>
+                </div>
               )}
             </div>
             <span className="text-[9px] text-neutral-400 font-mono mt-2 text-center">
@@ -382,9 +408,9 @@ export default function AdminPage() {
     id: '',
     title: '',
     issuer: '',
-    issueDate: '2026',
+    issueDate: '',
     credentialId: '',
-    category: 'Fullstack',
+    category: 'Kompetensi',
     description: '',
     skillsRaw: '',
     verificationUrl: '',
@@ -631,9 +657,9 @@ export default function AdminPage() {
       id: certForm.id?.trim() || editingCertId || 'draft-preview-cert',
       title: certForm.title || 'Nama Sertifikat (Preview Draft)',
       issuer: certForm.issuer || 'Instansi Penerbit',
-      issueDate: certForm.issueDate || '2026',
+      issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
       credentialId: certForm.credentialId || 'REF-PREVIEW-001',
-      category: (certForm.category as any) || 'Fullstack',
+      category: (certForm.category as any) || 'Kompetensi',
       description: certForm.description || 'Pernyataan akreditasi dan verifikasi kompetensi...',
       skills: skillsArray.length > 0 ? skillsArray : ['Web Development', 'TypeScript'],
       verificationUrl: certForm.verificationUrl || '',
@@ -643,10 +669,10 @@ export default function AdminPage() {
       imageScale: certForm.imageScale ?? 100,
     };
 
-    if (editingCertId) {
-      return certificates.map((c) => (c.id === editingCertId ? draftCert : c));
-    }
-    return [draftCert, ...certificates];
+    const list = editingCertId
+      ? certificates.map((c) => (c.id === editingCertId ? draftCert : c))
+      : [draftCert, ...certificates];
+    return sortCertificatesByDate(list);
   };
 
   const getDraftSkillsList = () => {
@@ -953,9 +979,9 @@ export default function AdminPage() {
       id: certForm.id?.trim() || certForm.title.toLowerCase().replace(/[^a-z0-9]/g, '-'),
       title: certForm.title,
       issuer: certForm.issuer,
-      issueDate: certForm.issueDate || '2026',
+      issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
       credentialId: certForm.credentialId || '',
-      category: (certForm.category as 'Competition' | 'AI & ML' | 'Fullstack' | 'IT Fundamentals') || 'Fullstack',
+      category: (certForm.category as any) || 'Kompetensi',
       description: certForm.description || '',
       skills: skillsArray,
       verificationUrl: certForm.verificationUrl || '',
@@ -1803,13 +1829,25 @@ export default function AdminPage() {
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
                         <img
-                          src={item.imageUrl}
+                          src={normalizeImageUrl(item.imageUrl)}
                           alt={item.title}
+                          referrerPolicy="no-referrer"
                           style={{
                             objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
                             transform: `scale(${(item.imageScale ?? 100) / 100})`,
                           }}
                           className="w-full h-full object-cover transition-all duration-150 origin-center"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (target.src.includes('lh3.googleusercontent.com/d/')) {
+                              const fileId = target.src.split('lh3.googleusercontent.com/d/')[1];
+                              if (fileId) {
+                                target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                                return;
+                              }
+                            }
+                            (target.parentElement as HTMLElement).style.display = 'none';
+                          }}
                         />
                       </div>
                     )}
@@ -1906,19 +1944,22 @@ export default function AdminPage() {
                       Kategori Sertifikat
                     </label>
                     <select
-                      value={certForm.category || 'Fullstack'}
+                      value={certForm.category || 'Kompetensi'}
                       onChange={(e) =>
                         setCertForm({
                           ...certForm,
-                          category: e.target.value as 'Competition' | 'AI & ML' | 'Fullstack' | 'IT Fundamentals',
+                          category: e.target.value as any,
                         })
                       }
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
                     >
-                      <option value="Competition">Competition</option>
-                      <option value="AI & ML">AI & ML</option>
-                      <option value="Fullstack">Fullstack</option>
-                      <option value="IT Fundamentals">IT Fundamentals</option>
+                      <option value="Kompetensi">Kompetensi</option>
+                      <option value="Pelatihan">Pelatihan</option>
+                      <option value="Bahasa">Bahasa</option>
+                      <option value="Organisasi">Organisasi</option>
+                      <option value="Magang">Magang</option>
+                      <option value="Kejuaraan">Kejuaraan</option>
+                      <option value="Lainnya">Lainnya</option>
                     </select>
                   </div>
                 </div>
@@ -1954,14 +1995,13 @@ export default function AdminPage() {
 
                   <div className="space-y-1.5">
                     <label className="block text-neutral-400 font-bold uppercase">
-                      Tahun / Tanggal Terbit
+                      Tanggal Terbit
                     </label>
                     <input
-                      type="text"
-                      value={certForm.issueDate || ''}
+                      type="date"
+                      value={formatDateForInput(certForm.issueDate)}
                       onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
-                      placeholder="e.g. 2024 / Mei 2025"
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden [color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -2037,17 +2077,9 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-neutral-400 font-bold uppercase">
-                    Urutan Tampil (Sort Order)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={certForm.sortOrder || 0}
-                    onChange={(e) => setCertForm({ ...certForm, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
-                  />
+                <div className="p-3 bg-neutral-900 border border-neutral-800 rounded text-xs text-neutral-400 font-mono flex items-center gap-2">
+                  <span className="text-amber-400 font-bold">ℹ️ Urutan Otomatis:</span>
+                  <span>Sertifikat otomatis disortir per tanggal (terbaru di paling depan).</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
@@ -2081,7 +2113,7 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-3 max-h-[750px] overflow-y-auto pr-1">
-                {certificates.map((item) => (
+                {sortCertificatesByDate(certificates).map((item) => (
                   <div
                     key={item.id}
                     className="p-4 bg-[#181920] border border-neutral-800 rounded-lg space-y-3 hover:border-amber-600 transition-colors"
@@ -2100,20 +2132,32 @@ export default function AdminPage() {
                       </div>
 
                       <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-neutral-800 text-neutral-300 shrink-0">
-                        {item.issueDate}
+                        {formatCertificateDisplayDate(item.issueDate)}
                       </span>
                     </div>
 
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
                         <img
-                          src={item.imageUrl}
+                          src={normalizeImageUrl(item.imageUrl)}
                           alt={item.title}
+                          referrerPolicy="no-referrer"
                           style={{
                             objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
                             transform: `scale(${(item.imageScale ?? 100) / 100})`,
                           }}
                           className="w-full h-full object-cover transition-all duration-150 origin-center"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (target.src.includes('lh3.googleusercontent.com/d/')) {
+                              const fileId = target.src.split('lh3.googleusercontent.com/d/')[1];
+                              if (fileId) {
+                                target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                                return;
+                              }
+                            }
+                            (target.parentElement as HTMLElement).style.display = 'none';
+                          }}
                         />
                       </div>
                     )}
@@ -2938,13 +2982,25 @@ onChange={(e) => setInterestForm({ ...interestForm, tagline: e.target.value })}
                     {item.imageUrl && (
                       <div className="w-full h-24 bg-neutral-900 rounded overflow-hidden border border-neutral-800">
                         <img
-                          src={item.imageUrl}
+                          src={normalizeImageUrl(item.imageUrl)}
                           alt={item.title}
+                          referrerPolicy="no-referrer"
                           style={{
                             objectPosition: `${item.imagePosX ?? 50}% ${item.imagePosY ?? 50}%`,
                             transform: `scale(${(item.imageScale ?? 100) / 100})`,
                           }}
                           className="w-full h-full object-cover transition-all duration-150 origin-center"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (target.src.includes('lh3.googleusercontent.com/d/')) {
+                              const fileId = target.src.split('lh3.googleusercontent.com/d/')[1];
+                              if (fileId) {
+                                target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                                return;
+                              }
+                            }
+                            (target.parentElement as HTMLElement).style.display = 'none';
+                          }}
                         />
                       </div>
                     )}

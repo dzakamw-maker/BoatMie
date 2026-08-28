@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { INTERESTS_DATA } from '@/data/dossierData';
-import { fetchInterests } from '@/lib/firestore';
+import { fetchInterests, normalizeImageUrl } from '@/lib/firestore';
 import { InterestItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -41,7 +41,13 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
     });
   }, [previewInterests, initialSelectedId]);
 
+  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
+
   const activeInterest = interests.find((item) => item.id === activeInterestId) || interests[0] || INTERESTS_DATA[0];
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [activeInterest?.id, activeInterest?.imageUrl]);
 
   const getInterestIcon = (id: string) => {
     switch (id) {
@@ -163,15 +169,17 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
 
         {/* Right Side: Cassette / Polaroid / Field Note Artifact (4 cols) */}
         <div className="lg:col-span-4 space-y-5">
-          {activeInterest.imageUrl && (
+          {activeInterest.imageUrl && !imageLoadError && (
             <div className="relative bg-white p-3 rounded shadow-md border border-neutral-200 group">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                 <TapeStrip rotate={2} width="w-16" />
               </div>
               <div className="aspect-[4/3] w-full bg-neutral-100 rounded overflow-hidden">
                 <img
-                  src={activeInterest.imageUrl}
+                  key={`${activeInterest.id}-${activeInterest.imageUrl}`}
+                  src={normalizeImageUrl(activeInterest.imageUrl)}
                   alt={activeInterest.title}
+                  referrerPolicy="no-referrer"
                   style={{
                     objectPosition: `${activeInterest.imagePosX ?? 50}% ${activeInterest.imagePosY ?? 50}%`,
                     transformOrigin: `${activeInterest.imagePosX ?? 50}% ${activeInterest.imagePosY ?? 50}%`,
@@ -179,7 +187,20 @@ export const InterestsSection: React.FC<InterestsSectionProps> = ({
                   }}
                   className="w-full h-full object-cover transition-all duration-300"
                   onError={(e) => {
-                    (e.currentTarget.parentElement?.parentElement as HTMLElement).style.display = 'none';
+                    const target = e.currentTarget;
+                    const currentSrc = target.src;
+                    const fileIdMatch = currentSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
+                    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+                    if (fileId) {
+                      if (currentSrc.includes('lh3.googleusercontent.com')) {
+                        target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+                        return;
+                      } else if (currentSrc.includes('thumbnail')) {
+                        target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                        return;
+                      }
+                    }
+                    setImageLoadError(true);
                   }}
                 />
               </div>
