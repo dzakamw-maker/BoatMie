@@ -73,6 +73,7 @@ import {
   Sparkles,
   Send,
   Mail,
+  Star,
 } from 'lucide-react';
 
 interface ImageFramingInputProps {
@@ -89,6 +90,21 @@ interface ImageFramingInputProps {
   aspectRatio?: 'square' | 'video' | '4/3';
   showGrayscalePreview?: boolean;
 }
+
+const CERT_CATEGORY_OPTIONS = [
+  'Kompetensi',
+  'Pelatihan',
+  'AI & ML',
+  'Fullstack',
+  'Web Development',
+  'Cloud & DevOps',
+  'IT Fundamentals',
+  'Kejuaraan',
+  'Bahasa',
+  'Organisasi',
+  'Magang',
+  'Lainnya',
+];
 
 const THEME_STYLES = {
   blue: {
@@ -409,6 +425,7 @@ export default function AdminPage() {
     title: '',
     issuer: '',
     issueDate: '',
+    expiryDate: '',
     credentialId: '',
     category: 'Kompetensi',
     description: '',
@@ -442,6 +459,10 @@ export default function AdminPage() {
     imagePosX: 50,
     imagePosY: 50,
     imageScale: 100,
+    imageUrl2: '',
+    imagePosX2: 50,
+    imagePosY2: 50,
+    imageScale2: 100,
     content: '',
     detailsRaw: '',
     fieldNotesRaw: '',
@@ -658,6 +679,7 @@ export default function AdminPage() {
       title: certForm.title || 'Nama Sertifikat (Preview Draft)',
       issuer: certForm.issuer || 'Instansi Penerbit',
       issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
+      expiryDate: certForm.expiryDate || '',
       credentialId: certForm.credentialId || 'REF-PREVIEW-001',
       category: (certForm.category as any) || 'Kompetensi',
       description: certForm.description || 'Pernyataan akreditasi dan verifikasi kompetensi...',
@@ -717,6 +739,10 @@ export default function AdminPage() {
       imagePosX: interestForm.imagePosX ?? 50,
       imagePosY: interestForm.imagePosY ?? 50,
       imageScale: interestForm.imageScale ?? 100,
+      imageUrl2: interestForm.imageUrl2 || '',
+      imagePosX2: interestForm.imagePosX2 ?? 50,
+      imagePosY2: interestForm.imagePosY2 ?? 50,
+      imageScale2: interestForm.imageScale2 ?? 100,
       content: interestForm.content || 'Uraian cerita, pengalaman, dan observasi...',
       details: detailsArray.length > 0 ? detailsArray : ['Poin observasi utama'],
       fieldNotes: fieldNotesArray.length > 0 ? fieldNotesArray : ['FIELD LOG: Catatan lapangan draft'],
@@ -921,6 +947,22 @@ export default function AdminPage() {
       status: (projectForm.status as 'Deployed' | 'Active Development' | 'Archived') || 'Deployed',
     };
 
+    // Validasi batas maksimal 4 proyek unggulan jika ditandai featured
+    if (projectPayload.featured) {
+      const currentFeaturedCount = projects.filter(
+        (p) => p.featured && p.id !== (editingProjectId || projectPayload.id)
+      ).length;
+
+      if (currentFeaturedCount >= 4) {
+        showNotification(
+          'error',
+          'Slot proyek unggulan sudah penuh (maksimal 4 proyek). Harap batalkan salah satu proyek unggulan terlebih dahulu.'
+        );
+        setLoading(false);
+        return;
+      }
+    }
+
     const res = await saveProject({ ...projectPayload, sort_order: projectForm.sortOrder || 0 } as any);
     if (res.success) {
       showNotification('success', `Proyek "${projectPayload.title}" berhasil disimpan!`);
@@ -929,6 +971,39 @@ export default function AdminPage() {
       await loadAllData();
     } else {
       showNotification('error', res.error || 'Gagal menyimpan proyek.');
+    }
+    setLoading(false);
+  };
+
+  const handleToggleFeatured = async (item: ProjectItem) => {
+    const isCurrentlyFeatured = !!item.featured;
+    const currentFeaturedCount = projects.filter((p) => p.featured).length;
+
+    if (!isCurrentlyFeatured && currentFeaturedCount >= 4) {
+      showNotification(
+        'error',
+        'Slot proyek unggulan sudah penuh (maksimal 4 proyek). Harap batalkan salah satu proyek unggulan terlebih dahulu.'
+      );
+      return;
+    }
+
+    setLoading(true);
+    const updatedProject: ProjectItem = {
+      ...item,
+      featured: !isCurrentlyFeatured,
+    };
+
+    const res = await saveProject({ ...updatedProject, sort_order: (item as any).sort_order || 0 } as any);
+    if (res.success) {
+      showNotification(
+        'success',
+        !isCurrentlyFeatured
+          ? `Proyek "${item.title}" berhasil dijadikan Proyek Unggulan (Tampil di Depan)!`
+          : `Proyek "${item.title}" dicabut dari Proyek Unggulan.`
+      );
+      await loadAllData();
+    } else {
+      showNotification('error', res.error || 'Gagal mengubah status unggulan proyek.');
     }
     setLoading(false);
   };
@@ -980,6 +1055,7 @@ export default function AdminPage() {
       title: certForm.title,
       issuer: certForm.issuer,
       issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
+      expiryDate: certForm.expiryDate || '',
       credentialId: certForm.credentialId || '',
       category: (certForm.category as any) || 'Kompetensi',
       description: certForm.description || '',
@@ -1007,6 +1083,7 @@ export default function AdminPage() {
     setEditingCertId(item.id);
     setCertForm({
       ...item,
+      expiryDate: item.expiryDate || '',
       imagePosX: item.imagePosX ?? 50,
       imagePosY: item.imagePosY ?? 50,
       imageScale: item.imageScale ?? 100,
@@ -1156,6 +1233,10 @@ export default function AdminPage() {
       imagePosX: interestForm.imagePosX ?? 50,
       imagePosY: interestForm.imagePosY ?? 50,
       imageScale: interestForm.imageScale ?? 100,
+      imageUrl2: interestForm.imageUrl2 || '',
+      imagePosX2: interestForm.imagePosX2 ?? 50,
+      imagePosY2: interestForm.imagePosY2 ?? 50,
+      imageScale2: interestForm.imageScale2 ?? 100,
       content: interestForm.content,
       details: detailsArray,
       fieldNotes: fieldNotesArray,
@@ -1180,8 +1261,12 @@ export default function AdminPage() {
       imagePosX: item.imagePosX ?? 50,
       imagePosY: item.imagePosY ?? 50,
       imageScale: item.imageScale ?? 100,
-      detailsRaw: item.details.join('\n'),
-      fieldNotesRaw: item.fieldNotes.join('\n'),
+      imageUrl2: item.imageUrl2 || '',
+      imagePosX2: item.imagePosX2 ?? 50,
+      imagePosY2: item.imagePosY2 ?? 50,
+      imageScale2: item.imageScale2 ?? 100,
+      detailsRaw: (item.details || []).join('\n'),
+      fieldNotesRaw: (item.fieldNotes || []).join('\n'),
       sortOrder: (item as any).sort_order || 0,
     });
     window.scrollTo({ top: 300, behavior: 'smooth' });
@@ -1637,11 +1722,10 @@ export default function AdminPage() {
                       Timeline / Tanggal
                     </label>
                     <input
-                      type="text"
-                      value={projectForm.date || ''}
+                      type="date"
+                      value={formatDateForInput(projectForm.date)}
                       onChange={(e) => setProjectForm({ ...projectForm, date: e.target.value })}
-                      placeholder="e.g. Q1 2026 / 2025"
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-purple-500 focus:outline-hidden"
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-purple-500 focus:outline-hidden [color-scheme:dark]"
                     />
                   </div>
                 </div>
@@ -1765,10 +1849,30 @@ export default function AdminPage() {
                     <input
                       type="checkbox"
                       checked={projectForm.featured ?? false}
-                      onChange={(e) => setProjectForm({ ...projectForm, featured: e.target.checked })}
+                      onChange={(e) => {
+                        const isChecking = e.target.checked;
+                        if (isChecking) {
+                          const currentFeaturedCount = projects.filter(
+                            (p) => p.featured && p.id !== (editingProjectId || projectForm.id)
+                          ).length;
+                          if (currentFeaturedCount >= 4) {
+                            showNotification(
+                              'error',
+                              'Slot proyek unggulan sudah penuh (maksimal 4 proyek). Harap batalkan salah satu proyek unggulan terlebih dahulu.'
+                            );
+                            return;
+                          }
+                        }
+                        setProjectForm({ ...projectForm, featured: isChecking });
+                      }}
                       className="w-4 h-4 accent-purple-500"
                     />
-                    <span className="text-neutral-300 font-bold uppercase">Proyek Unggulan (Featured)</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-300 font-bold uppercase">Proyek Unggulan (Tampil Depan)</span>
+                      <span className="text-[10px] text-purple-400 font-mono font-bold">
+                        ({projects.filter((p) => p.featured).length}/4)
+                      </span>
+                    </div>
                   </label>
                 </div>
 
@@ -1800,19 +1904,33 @@ export default function AdminPage() {
                 <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-neutral-400">
                   DAFTAR PROYEK TERDAFTAR ({projects.length})
                 </h3>
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+                  UNGGULAN: {projects.filter((p) => p.featured).length}/4
+                </span>
               </div>
 
               <div className="space-y-3 max-h-[750px] overflow-y-auto pr-1">
                 {projects.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 bg-[#181920] border border-neutral-800 rounded-lg space-y-3 hover:border-purple-600 transition-colors"
+                    className={`p-4 bg-[#181920] border rounded-lg space-y-3 transition-colors ${
+                      item.featured
+                        ? 'border-purple-500/80 bg-purple-950/20 shadow-xs'
+                        : 'border-neutral-800 hover:border-purple-600'
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="font-mono text-[10px] text-purple-400 uppercase font-bold">
-                          {item.category}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] text-purple-400 uppercase font-bold">
+                            {item.category}
+                          </span>
+                          {item.featured && (
+                            <span className="px-1.5 py-0.2 rounded font-mono text-[9px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                              ⭐ UNGGULAN
+                            </span>
+                          )}
+                        </div>
                         <h4 className="font-sans text-base font-bold text-white uppercase">
                           {item.title}
                         </h4>
@@ -1862,7 +1980,21 @@ export default function AdminPage() {
 
                     <div className="flex items-center justify-between pt-2 border-t border-neutral-800 font-mono text-xs">
                       <span className="text-neutral-500 text-[11px]">{item.date}</span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleFeatured(item)}
+                          className={`px-2 py-1 rounded font-mono text-[10px] font-bold uppercase transition-all flex items-center gap-1 border ${
+                            item.featured
+                              ? 'bg-purple-900 text-purple-200 border-purple-500 hover:bg-purple-800 shadow-xs'
+                              : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white hover:border-purple-500'
+                          }`}
+                          title={item.featured ? 'Batalkan unggulan' : 'Jadikan unggulan (Tampil di depan)'}
+                        >
+                          <Star className={`w-3 h-3 ${item.featured ? 'text-amber-400 fill-amber-400' : 'text-neutral-400'}`} />
+                          <span>{item.featured ? 'UNGGULAN' : 'UNGGULKAN'}</span>
+                        </button>
+
                         <button
                           onClick={() => handleEditProject(item)}
                           className="p-1.5 text-purple-300 hover:text-white bg-purple-950 rounded border border-purple-800 transition-colors"
@@ -1943,24 +2075,51 @@ export default function AdminPage() {
                     <label className="block text-neutral-400 font-bold uppercase">
                       Kategori Sertifikat
                     </label>
-                    <select
-                      value={certForm.category || 'Kompetensi'}
-                      onChange={(e) =>
-                        setCertForm({
-                          ...certForm,
-                          category: e.target.value as any,
-                        })
-                      }
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
-                    >
-                      <option value="Kompetensi">Kompetensi</option>
-                      <option value="Pelatihan">Pelatihan</option>
-                      <option value="Bahasa">Bahasa</option>
-                      <option value="Organisasi">Organisasi</option>
-                      <option value="Magang">Magang</option>
-                      <option value="Kejuaraan">Kejuaraan</option>
-                      <option value="Lainnya">Lainnya</option>
-                    </select>
+                    <div className="space-y-2">
+                      <select
+                        value={
+                          CERT_CATEGORY_OPTIONS.includes(certForm.category || '')
+                            ? certForm.category
+                            : 'Lainnya'
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'Lainnya') {
+                            setCertForm({
+                              ...certForm,
+                              category:
+                                certForm.category && !CERT_CATEGORY_OPTIONS.includes(certForm.category)
+                                  ? certForm.category
+                                  : 'Lainnya',
+                            });
+                          } else {
+                            setCertForm({ ...certForm, category: val as any });
+                          }
+                        }}
+                        className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
+                      >
+                        {CERT_CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                        {certForm.category && !CERT_CATEGORY_OPTIONS.includes(certForm.category) && (
+                          <option value={certForm.category}>
+                            {certForm.category} (Kategori Khusus)
+                          </option>
+                        )}
+                      </select>
+
+                      {(!certForm.category || !CERT_CATEGORY_OPTIONS.slice(0, -1).includes(certForm.category)) && (
+                        <input
+                          type="text"
+                          value={certForm.category === 'Lainnya' ? '' : certForm.category || ''}
+                          onChange={(e) => setCertForm({ ...certForm, category: e.target.value || 'Lainnya' })}
+                          placeholder="Ketik nama kategori khusus (e.g. AI & ML / Sains)..."
+                          className="w-full px-3 py-1.5 bg-neutral-950 border border-amber-500/50 rounded text-xs text-amber-200 placeholder:text-neutral-500 focus:border-amber-400 focus:outline-hidden"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1978,7 +2137,7 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
                     <label className="block text-neutral-400 font-bold uppercase">
                       Penerbit (Issuer) *
@@ -2001,6 +2160,30 @@ export default function AdminPage() {
                       type="date"
                       value={formatDateForInput(certForm.issueDate)}
                       onChange={(e) => setCertForm({ ...certForm, issueDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden [color-scheme:dark]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-neutral-400 font-bold uppercase">
+                        Tanggal Berakhir (Opsional)
+                      </label>
+                      {certForm.expiryDate && (
+                        <button
+                          type="button"
+                          onClick={() => setCertForm({ ...certForm, expiryDate: '' })}
+                          className="text-[10px] text-amber-400 hover:text-amber-300 font-mono underline"
+                          title="Hapus tanggal berakhir (Set Seumur Hidup)"
+                        >
+                          Kosongkan
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="date"
+                      value={formatDateForInput(certForm.expiryDate)}
+                      onChange={(e) => setCertForm({ ...certForm, expiryDate: e.target.value })}
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden [color-scheme:dark]"
                     />
                   </div>
@@ -2133,6 +2316,7 @@ export default function AdminPage() {
 
                       <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-neutral-800 text-neutral-300 shrink-0">
                         {formatCertificateDisplayDate(item.issueDate)}
+                        {item.expiryDate ? ` - ${formatCertificateDisplayDate(item.expiryDate)}` : ' (Seumur Hidup)'}
                       </span>
                     </div>
 
@@ -2849,22 +3033,40 @@ onChange={(e) => setInterestForm({ ...interestForm, tagline: e.target.value })}
                   </div>
                 </div>
 
-                {/* Media Image Link & Framing Controls for Interests */}
-                <ImageFramingInput
-                  label="Link Foto Kegiatan / Dokumentasi & Posisi Framing (URL)"
-                  themeColor="red"
-                  imageUrl={interestForm.imageUrl || ''}
-                  placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
-                  helpText="Masukkan URL foto kegiatan, dokumentasi ekspedisi, atau suasana santai."
-                  posX={interestForm.imagePosX ?? 50}
-                  posY={interestForm.imagePosY ?? 50}
-                  scale={interestForm.imageScale ?? 100}
-                  onImageUrlChange={(url) => setInterestForm({ ...interestForm, imageUrl: url })}
-                  onPositionChange={(posX, posY, scale) =>
-                    setInterestForm({ ...interestForm, imagePosX: posX, imagePosY: posY, imageScale: scale })
-                  }
-                  aspectRatio="4/3"
-                />
+                {/* Media Image Link & Framing Controls for Interests (Photo 1 & Photo 2) */}
+                <div className="space-y-4 pt-1">
+                  <ImageFramingInput
+                    label="Link Foto Utama (#1) / Dokumentasi & Posisi Framing (URL)"
+                    themeColor="red"
+                    imageUrl={interestForm.imageUrl || ''}
+                    placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
+                    helpText="Masukkan URL foto utama kegiatan (Snapshot 01)."
+                    posX={interestForm.imagePosX ?? 50}
+                    posY={interestForm.imagePosY ?? 50}
+                    scale={interestForm.imageScale ?? 100}
+                    onImageUrlChange={(url) => setInterestForm({ ...interestForm, imageUrl: url })}
+                    onPositionChange={(posX, posY, scale) =>
+                      setInterestForm({ ...interestForm, imagePosX: posX, imagePosY: posY, imageScale: scale })
+                    }
+                    aspectRatio="4/3"
+                  />
+
+                  <ImageFramingInput
+                    label="Link Foto Tambahan (#2) / Dokumentasi & Posisi Framing (URL)"
+                    themeColor="red"
+                    imageUrl={interestForm.imageUrl2 || ''}
+                    placeholder="https://images.unsplash.com/... atau https://i.imgur.com/..."
+                    helpText="Masukkan URL foto kedua kegiatan (Snapshot 02) — opsional."
+                    posX={interestForm.imagePosX2 ?? 50}
+                    posY={interestForm.imagePosY2 ?? 50}
+                    scale={interestForm.imageScale2 ?? 100}
+                    onImageUrlChange={(url) => setInterestForm({ ...interestForm, imageUrl2: url })}
+                    onPositionChange={(posX, posY, scale) =>
+                      setInterestForm({ ...interestForm, imagePosX2: posX, imagePosY2: posY, imageScale2: scale })
+                    }
+                    aspectRatio="4/3"
+                  />
+                </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-neutral-400 font-bold uppercase">

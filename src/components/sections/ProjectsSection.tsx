@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { PROJECTS_DATA } from '@/data/dossierData';
-import { fetchProjects, normalizeImageUrl } from '@/lib/firestore';
+import { fetchProjects, normalizeImageUrl, formatCertificateDisplayDate } from '@/lib/firestore';
 import { ProjectItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -12,12 +13,15 @@ import {
   Sparkles,
   FolderGit2,
   ArrowUpRight,
+  ArrowLeft,
   Archive,
   Search,
   X,
   FileText,
   Filter,
   CheckCircle2,
+  Star,
+  Eye,
 } from 'lucide-react';
 
 interface ProjectsSectionProps {
@@ -34,42 +38,77 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
     initialSelectedId || previewProjects?.[0]?.id || PROJECTS_DATA[0].id
   );
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState<boolean>(false);
+  const [detailModalProject, setDetailModalProject] = useState<ProjectItem | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
   const [imageLoadError, setImageLoadError] = useState<boolean>(false);
+  const [detailImageLoadError, setDetailImageLoadError] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
-  const selectedProject = projects.find((p) => p.id === selectedProjectId) || projects[0] || PROJECTS_DATA[0];
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Proyek Unggulan untuk tampilan depan (Maksimal 4)
+  const featuredProjects = useMemo(() => {
+    const featured = projects.filter((p) => p.featured);
+    if (featured.length > 0) {
+      return featured.slice(0, 4);
+    }
+    return projects.slice(0, 4);
+  }, [projects]);
+
+  const selectedProject =
+    featuredProjects.find((p) => p.id === selectedProjectId) ||
+    projects.find((p) => p.id === selectedProjectId) ||
+    featuredProjects[0] ||
+    projects[0] ||
+    PROJECTS_DATA[0];
 
   useEffect(() => {
     setImageLoadError(false);
   }, [selectedProject?.id, selectedProject?.imageUrl]);
 
   useEffect(() => {
+    setDetailImageLoadError(false);
+  }, [detailModalProject?.id, detailModalProject?.imageUrl]);
+
+  useEffect(() => {
     if (previewProjects) {
       setProjects(previewProjects);
+      const feat = previewProjects.filter((p) => p.featured);
+      const list = feat.length > 0 ? feat.slice(0, 4) : previewProjects.slice(0, 4);
       if (initialSelectedId) {
         setSelectedProjectId(initialSelectedId);
-      } else if (previewProjects.length > 0 && !previewProjects.some((p) => p.id === selectedProjectId)) {
-        setSelectedProjectId(previewProjects[0].id);
+      } else if (list.length > 0 && !list.some((p) => p.id === selectedProjectId)) {
+        setSelectedProjectId(list[0].id);
       }
       return;
     }
     fetchProjects().then((data) => {
       if (data && data.length > 0) {
         setProjects(data);
-        if (!selectedProjectId) setSelectedProjectId(data[0].id);
+        const feat = data.filter((p) => p.featured);
+        const list = feat.length > 0 ? feat.slice(0, 4) : data.slice(0, 4);
+        if (!selectedProjectId || !list.some((p) => p.id === selectedProjectId)) {
+          setSelectedProjectId(list[0]?.id || data[0].id);
+        }
       }
     });
   }, [previewProjects, initialSelectedId]);
 
-  // Close modal on Escape key press
+  // Close modals on Escape key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setIsArchiveModalOpen(false);
+        if (detailModalProject) {
+          setDetailModalProject(null);
+        } else if (isArchiveModalOpen) {
+          setIsArchiveModalOpen(false);
+        }
       }
     };
-    if (isArchiveModalOpen) {
+    if (isArchiveModalOpen || detailModalProject) {
       window.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
@@ -77,7 +116,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isArchiveModalOpen]);
+  }, [isArchiveModalOpen, detailModalProject]);
 
   // Unique categories for filter pills
   const categories = useMemo(() => {
@@ -99,9 +138,24 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
     });
   }, [projects, searchQuery, activeCategoryFilter]);
 
-  const handleSelectProjectFromModal = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setIsArchiveModalOpen(false);
+  const handleImageErrorFallback = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
+    setError: (v: boolean) => void
+  ) => {
+    const target = e.currentTarget;
+    const currentSrc = target.src;
+    const fileIdMatch = currentSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
+    const fileId = fileIdMatch ? fileIdMatch[1] : null;
+    if (fileId) {
+      if (currentSrc.includes('lh3.googleusercontent.com')) {
+        target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+        return;
+      } else if (currentSrc.includes('thumbnail')) {
+        target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+        return;
+      }
+    }
+    setError(true);
   };
 
   return (
@@ -140,9 +194,9 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
         </button>
       </div>
 
-      {/* Projects Grid Selector */}
+      {/* Featured Projects Grid Selector (Max 4 Unggulan) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {projects.map((project, idx) => {
+        {featuredProjects.map((project) => {
           const isSelected = project.id === selectedProjectId;
           const displayStatus = project.status === 'Active Development' ? 'ACTIVE DEV' : project.status;
           return (
@@ -193,7 +247,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
         })}
       </div>
 
-      {/* Selected Project Case File Card */}
+      {/* Selected Project Case File Card (Front View) */}
       <div className="relative bg-white p-6 sm:p-8 rounded-sm shadow-md border border-neutral-200 space-y-6">
         {/* Paperclip clipping the case sheet */}
         <div className="absolute -top-6 left-10 z-20">
@@ -211,7 +265,16 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
             <div className="flex items-center gap-2 font-mono text-xs text-purple-700 font-bold uppercase mb-1">
               <span>{selectedProject.category}</span>
               <span>•</span>
-              <span>TIMELINE: {selectedProject.date}</span>
+              <span>TIMELINE: {formatCertificateDisplayDate(selectedProject.date)}</span>
+              {selectedProject.featured && (
+                <>
+                  <span>•</span>
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    PROYEK UNGGULAN
+                  </span>
+                </>
+              )}
             </div>
             <h2 className="font-sans text-3xl sm:text-4xl text-neutral-950 uppercase tracking-wide leading-tight">
               {selectedProject.title}
@@ -263,22 +326,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                     transform: `scale(${(selectedProject.imageScale ?? 100) / 100})`,
                   }}
                   className="w-full h-full object-cover transition-all duration-300"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    const currentSrc = target.src;
-                    const fileIdMatch = currentSrc.match(/(?:id=|\/d\/)([a-zA-Z0-9_-]{20,})/i);
-                    const fileId = fileIdMatch ? fileIdMatch[1] : null;
-                    if (fileId) {
-                      if (currentSrc.includes('lh3.googleusercontent.com')) {
-                        target.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
-                        return;
-                      } else if (currentSrc.includes('thumbnail')) {
-                        target.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
-                        return;
-                      }
-                    }
-                    setImageLoadError(true);
-                  }}
+                  onError={(e) => handleImageErrorFallback(e, setImageLoadError)}
                 />
               </div>
             )}
@@ -339,12 +387,12 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
         </div>
       </div>
 
-      {/* Archive Catalog Popup Modal */}
-      {isArchiveModalOpen && (
+      {/* Archive Catalog Modal (Katalog Semua Arsip) */}
+      {mounted && isArchiveModalOpen && createPortal(
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-neutral-950/80 backdrop-blur-xs animate-fadeIn"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-neutral-950/80 backdrop-blur-xs animate-fadeIn"
           onClick={() => setIsArchiveModalOpen(false)}
         >
           <div
@@ -438,24 +486,26 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredProjects.map((project) => {
-                    const isSelected = project.id === selectedProjectId;
                     const displayStatus =
                       project.status === 'Active Development' ? 'ACTIVE DEV' : project.status;
                     return (
                       <div
                         key={project.id}
-                        className={`p-4 rounded border bg-white flex flex-col justify-between transition-all hover:shadow-md relative ${
-                          isSelected
-                            ? 'ring-2 ring-purple-600 border-purple-500 bg-purple-50/40'
-                            : 'border-neutral-200 hover:border-purple-300'
-                        }`}
+                        className="p-4 rounded border bg-white flex flex-col justify-between transition-all hover:shadow-md relative border-neutral-200 hover:border-purple-300"
                       >
                         <div>
                           {/* Card Top Meta */}
                           <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider mb-2 gap-1">
-                            <span className="text-neutral-500 font-semibold">{project.category}</span>
+                            <div className="flex items-center gap-1.5 truncate">
+                              <span className="text-neutral-500 font-semibold truncate">{project.category}</span>
+                              {project.featured && (
+                                <span className="px-1.5 py-0.2 rounded font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+                                  ⭐ UNGGULAN
+                                </span>
+                              )}
+                            </div>
                             <span
-                              className={`px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
+                              className={`px-1.5 py-0.5 rounded font-bold whitespace-nowrap shrink-0 ${
                                 displayStatus === 'Deployed'
                                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                   : 'bg-amber-100 text-amber-800 border border-amber-300'
@@ -491,21 +541,17 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                           </div>
                         </div>
 
-                        {/* Action Button */}
+                        {/* Action Button: Open Pop-Up Detail Page */}
                         <div className="pt-3 border-t border-neutral-200 flex items-center justify-between">
                           <span className="font-mono text-[10px] text-neutral-500">
-                            {project.date}
+                            {formatCertificateDisplayDate(project.date)}
                           </span>
                           <button
-                            onClick={() => handleSelectProjectFromModal(project.id)}
-                            className={`px-3 py-1.5 rounded font-mono text-xs font-bold uppercase transition-colors inline-flex items-center gap-1.5 ${
-                              isSelected
-                                ? 'bg-purple-800 text-white'
-                                : 'bg-neutral-900 hover:bg-purple-900 text-white'
-                            }`}
+                            onClick={() => setDetailModalProject(project)}
+                            className="px-3 py-1.5 rounded font-mono text-xs font-bold uppercase transition-colors inline-flex items-center gap-1.5 bg-purple-900 hover:bg-purple-950 text-white shadow-xs cursor-pointer"
                           >
-                            <span>{isSelected ? 'SEDANG DIBUKA' : 'BUKA BERKAS'}</span>
-                            <ArrowUpRight className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-purple-300" />
+                            <span>LIHAT DETAIL</span>
                           </button>
                         </div>
                       </div>
@@ -521,10 +567,201 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>TOTAL ARSIP: {filteredProjects.length} DARI {projects.length} BERKAS</span>
               </div>
-              <span className="text-neutral-500">TEKAN ESC ATAU KLIK DI LUAR UNTUK MENUTUP</span>
+              <span className="text-neutral-500">KLIK &apos;LIHAT DETAIL&apos; UNTUK POP-UP BERKAS LENGKAP</span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Detail Pop-up Page / Modal for Archive Projects (Rendered directly in foreground with highest z-index) */}
+      {mounted && detailModalProject && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6 bg-neutral-950/85 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setDetailModalProject(null)}
+        >
+          <div
+            className="relative bg-[#faf8f3] text-neutral-900 w-full max-w-4xl max-h-[92vh] rounded shadow-2xl border-2 border-purple-900 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Pop-up Top Header Bar */}
+            <div className="bg-purple-950 text-white px-4 sm:px-5 py-3 flex items-center justify-between border-b border-purple-900 gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 truncate">
+                <button
+                  onClick={() => setDetailModalProject(null)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-900 hover:bg-purple-800 border border-purple-700 text-purple-200 hover:text-white font-mono text-[11px] font-bold uppercase transition-colors shrink-0 cursor-pointer"
+                  title="Kembali ke Katalog"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Katalog</span>
+                </button>
+                <div className="h-4 w-px bg-purple-800 shrink-0" />
+                <span className="font-mono text-[10px] text-purple-300 uppercase tracking-widest font-bold truncate">
+                  DOSSIER // {detailModalProject.title.toUpperCase()}
+                </span>
+                {detailModalProject.featured && (
+                  <span className="px-1.5 py-0.2 rounded font-mono text-[9px] font-bold bg-amber-400 text-neutral-950 shrink-0">
+                    ⭐ UNGGULAN
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setDetailModalProject(null)}
+                className="p-1.5 text-purple-300 hover:text-white hover:bg-purple-800 rounded transition-colors shrink-0 cursor-pointer"
+                title="Tutup Berkas (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Pop-up Scrollable Content Body */}
+            <div className="p-6 sm:p-8 overflow-y-auto flex-1 bg-white relative space-y-6">
+              {/* Paperclip clipping */}
+              <div className="absolute -top-6 left-10 z-20 pointer-events-none">
+                <PaperClip className="w-8 h-16" color="#475569" />
+              </div>
+
+              {/* Tape */}
+              <div className="absolute -top-3 right-8 pointer-events-none">
+                <TapeStrip rotate={-2} width="w-24" />
+              </div>
+
+              {/* Header Info */}
+              <div className="border-b border-neutral-200 pb-4 pt-2 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 font-mono text-xs text-purple-700 font-bold uppercase mb-1">
+                    <span>{detailModalProject.category}</span>
+                    <span>•</span>
+                    <span>TIMELINE: {formatCertificateDisplayDate(detailModalProject.date)}</span>
+                    <span>•</span>
+                    <span className="text-neutral-500">{detailModalProject.status}</span>
+                  </div>
+                  <h2 className="font-sans text-2xl sm:text-4xl text-neutral-950 uppercase tracking-wide leading-tight">
+                    {detailModalProject.title}
+                  </h2>
+                  <p className="font-serif text-base text-neutral-600 italic">
+                    {detailModalProject.subtitle}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {detailModalProject.liveUrl && detailModalProject.liveUrl !== '#' && (
+                    <a
+                      href={detailModalProject.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-700 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-purple-800 transition-colors"
+                    >
+                      <span>Live System</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  {detailModalProject.repoUrl && (
+                    <a
+                      href={detailModalProject.repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-900 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-neutral-800 transition-colors"
+                    >
+                      <span>Source Code</span>
+                      <Github className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Narrative & Case Details */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8 space-y-4">
+                  {detailModalProject.imageUrl && !detailImageLoadError && (
+                    <div className="relative aspect-video w-full rounded border border-neutral-300 overflow-hidden bg-neutral-100 shadow-inner group mb-2">
+                      <img
+                        key={`modal-${detailModalProject.id}-${detailModalProject.imageUrl}`}
+                        src={normalizeImageUrl(detailModalProject.imageUrl)}
+                        alt={detailModalProject.title}
+                        referrerPolicy="no-referrer"
+                        style={{
+                          objectPosition: `${detailModalProject.imagePosX ?? 50}% ${detailModalProject.imagePosY ?? 50}%`,
+                          transformOrigin: `${detailModalProject.imagePosX ?? 50}% ${detailModalProject.imagePosY ?? 50}%`,
+                          transform: `scale(${(detailModalProject.imageScale ?? 100) / 100})`,
+                        }}
+                        className="w-full h-full object-cover transition-all duration-300"
+                        onError={(e) => handleImageErrorFallback(e, setDetailImageLoadError)}
+                      />
+                    </div>
+                  )}
+
+                  <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-neutral-800 border-b border-neutral-200 pb-1">
+                    SYSTEM OVERVIEW & BACKGROUND
+                  </h4>
+                  <p className="font-serif text-base text-neutral-800 leading-relaxed">
+                    {detailModalProject.description}
+                  </p>
+
+                  <h4 className="font-mono text-xs uppercase tracking-wider font-bold text-neutral-800 border-b border-neutral-200 pb-1 pt-2">
+                    ENGINEERING ARCHITECTURE & EXECUTION
+                  </h4>
+                  <p className="font-serif text-base text-neutral-800 leading-relaxed">
+                    {detailModalProject.caseStudy}
+                  </p>
+                </div>
+
+                {/* Right Column: Stack & Metrics */}
+                <div className="lg:col-span-4 space-y-5 bg-neutral-50 p-5 rounded border border-neutral-200 h-fit">
+                  <div>
+                    <h5 className="font-mono text-xs font-bold uppercase tracking-wider text-neutral-700 mb-3">
+                      INTEGRATED STACK
+                    </h5>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(detailModalProject.techStack || []).map((tech) => (
+                        <span
+                          key={tech}
+                          className="font-mono text-xs px-2.5 py-1 rounded bg-white text-purple-900 border border-purple-200 font-semibold shadow-2xs"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {detailModalProject.metrics && detailModalProject.metrics.length > 0 && (
+                    <div className="pt-3 border-t border-neutral-200">
+                      <h5 className="font-mono text-xs font-bold uppercase tracking-wider text-neutral-700 mb-3">
+                        FIELD IMPACT & METRICS
+                      </h5>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {detailModalProject.metrics.map((m) => (
+                          <div key={m.label} className="bg-white p-2.5 rounded border border-neutral-200 text-center">
+                            <div className="font-sans font-black text-base text-purple-700 uppercase">
+                              {m.value}
+                            </div>
+                            <div className="font-mono text-[9px] text-neutral-500 uppercase">
+                              {m.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Pop-up Footer Bar */}
+            <div className="p-3.5 bg-neutral-100 border-t border-neutral-200 flex items-center justify-between font-mono text-xs">
+              <span className="text-neutral-500">DOSSIER FILE ID: {detailModalProject.id.toUpperCase()}</span>
+              <button
+                onClick={() => setDetailModalProject(null)}
+                className="px-4 py-1.5 bg-purple-900 hover:bg-purple-950 text-white rounded font-bold uppercase transition-colors cursor-pointer"
+              >
+                TUTUP BERKAS (KEMBALI KE KATALOG)
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

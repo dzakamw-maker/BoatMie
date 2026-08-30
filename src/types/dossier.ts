@@ -47,6 +47,7 @@ export interface CertificateItem {
   title: string;
   issuer: string;
   issueDate: string;
+  expiryDate?: string;
   credentialId: string;
   category: CertificateCategory;
   description: string;
@@ -81,6 +82,10 @@ export interface InterestItem {
   imagePosX?: number;
   imagePosY?: number;
   imageScale?: number;
+  imageUrl2?: string;
+  imagePosX2?: number;
+  imagePosY2?: number;
+  imageScale2?: number;
 }
 
 export interface ContactMessage {
