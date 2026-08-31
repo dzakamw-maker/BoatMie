@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CERTIFICATES_DATA } from '@/data/dossierData';
-import { fetchCertificates, sortCertificatesByDate, formatCertificateDisplayDate, normalizeImageUrl, parseCertificateDate } from '@/lib/firestore';
+import { fetchCertificates, sortCertificatesByDate, formatCertificateDisplayDate, normalizeImageUrl, parseCertificateDate, sanitizeUrl } from '@/lib/firestore';
 import { CertificateItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -406,7 +406,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
 
             {selectedCert.verificationUrl && (
               <a
-                href={selectedCert.verificationUrl}
+                href={sanitizeUrl(selectedCert.verificationUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-mono text-xs uppercase font-bold rounded shadow-xs transition-colors cursor-pointer"
@@ -814,7 +814,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
 
                   {detailModalCert.verificationUrl && (
                     <a
-                      href={detailModalCert.verificationUrl}
+                      href={sanitizeUrl(detailModalCert.verificationUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-mono text-xs uppercase font-bold rounded shadow-xs transition-colors cursor-pointer"

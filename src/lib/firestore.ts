@@ -367,6 +367,30 @@ export function normalizeImageUrl(url?: string): string {
   return trimmed;
 }
 
+export function sanitizeUrl(url?: string): string {
+  if (!url) return '#';
+  const trimmed = url.trim();
+  if (!trimmed) return '#';
+
+  // Allow safe web protocols (http, https)
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Allow safe relative paths, anchor fragments, or valid mailto
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('#') ||
+    /^mailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i.test(trimmed)
+  ) {
+    return trimmed;
+  }
+
+  // Fallback to safe anchor to neutralize javascript:, data:, etc.
+  return '#';
+}
+
+
 export function sortCertificatesByDate(certs: CertificateItem[]): CertificateItem[] {
   return [...certs].sort((a, b) => {
     const timeA = parseCertificateDate(a.issueDate);

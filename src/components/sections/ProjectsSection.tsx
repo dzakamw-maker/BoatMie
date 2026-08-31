@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { PROJECTS_DATA } from '@/data/dossierData';
-import { fetchProjects, normalizeImageUrl, formatCertificateDisplayDate } from '@/lib/firestore';
+import { fetchProjects, normalizeImageUrl, formatCertificateDisplayDate, sanitizeUrl } from '@/lib/firestore';
 import { ProjectItem } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { TapeStrip } from '../common/TapeStrip';
@@ -287,7 +287,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
           <div className="flex flex-wrap items-center gap-3">
             {selectedProject.liveUrl && selectedProject.liveUrl !== '#' && (
               <a
-                href={selectedProject.liveUrl}
+                href={sanitizeUrl(selectedProject.liveUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-700 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-purple-800 transition-colors"
@@ -298,7 +298,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
             )}
             {selectedProject.repoUrl && (
               <a
-                href={selectedProject.repoUrl}
+                href={sanitizeUrl(selectedProject.repoUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-900 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-neutral-800 transition-colors"
@@ -649,7 +649,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                 <div className="flex flex-wrap items-center gap-3">
                   {detailModalProject.liveUrl && detailModalProject.liveUrl !== '#' && (
                     <a
-                      href={detailModalProject.liveUrl}
+                      href={sanitizeUrl(detailModalProject.liveUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-700 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-purple-800 transition-colors"
@@ -660,7 +660,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
                   )}
                   {detailModalProject.repoUrl && (
                     <a
-                      href={detailModalProject.repoUrl}
+                      href={sanitizeUrl(detailModalProject.repoUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-neutral-900 text-white font-mono text-xs uppercase font-bold rounded shadow-sm hover:bg-neutral-800 transition-colors"

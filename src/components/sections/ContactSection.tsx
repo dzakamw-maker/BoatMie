@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CONTACT_DATA } from '@/data/dossierData';
-import { fetchContact } from '@/lib/firestore';
+import { fetchContact, sanitizeUrl } from '@/lib/firestore';
 import { ContactInfo } from '@/types/dossier';
 import { StampBadge } from '../common/StampBadge';
 import { StickyNote } from '../common/StickyNote';
@@ -125,7 +125,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-blue-400 shrink-0" />
                 <a
-                  href={`mailto:${contact.email}`}
+                  href={`mailto:${encodeURIComponent(contact.email || '')}`}
                   className="text-neutral-300 hover:text-white underline underline-offset-2"
                 >
                   {contact.email}
@@ -141,7 +141,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           {/* Social Channels List */}
           <div className="space-y-2 font-mono text-xs">
             <a
-              href={contact.github || 'https://github.com/dzakamw-maker'}
+              href={sanitizeUrl(contact.github || 'https://github.com/dzakamw-maker')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-neutral-900 transition-colors shadow-2xs group"
@@ -157,7 +157,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             </a>
 
             <a
-              href={contact.linkedin || 'https://www.linkedin.com/in/dzaka/'}
+              href={sanitizeUrl(contact.linkedin || 'https://www.linkedin.com/in/dzaka/')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-blue-600 transition-colors shadow-2xs group"
@@ -173,7 +173,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
             </a>
 
             <a
-              href={contact.instagram || 'https://www.instagram.com/dzakaharja/'}
+              href={sanitizeUrl(contact.instagram || 'https://www.instagram.com/dzakaharja/')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-3.5 bg-white rounded border border-neutral-200 hover:border-pink-600 transition-colors shadow-2xs group"

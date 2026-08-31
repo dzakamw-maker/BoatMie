@@ -3282,7 +3282,7 @@ onChange={(e) => setInterestForm({ ...interestForm, tagline: e.target.value })}
                           {msg.name}
                         </h4>
                         <a
-                          href={`mailto:${msg.email}`}
+                          href={`mailto:${encodeURIComponent(msg.email)}`}
                           className="font-mono text-xs text-blue-400 hover:underline"
                         >
                           {msg.email}
