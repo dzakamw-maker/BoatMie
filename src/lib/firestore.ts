@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import {
@@ -634,58 +635,86 @@ export async function deleteMessage(id: string): Promise<{ success: boolean; err
 // ==========================================
 export async function seedInitialData(): Promise<{ success: boolean; message: string }> {
   try {
+    let batch = writeBatch(db);
+    let operationCount = 0;
+
+    const commitBatchIfNeeded = async () => {
+      if (operationCount >= 500) {
+        await batch.commit();
+        batch = writeBatch(db);
+        operationCount = 0;
+      }
+    };
+
     // 1. FILE-01: Table `about`
-    await setDoc(doc(db, 'about', 'main'), {
+    batch.set(doc(db, 'about', 'main'), {
       ...ABOUT_DATA,
       updated_at: serverTimestamp(),
     });
+    operationCount++;
+    await commitBatchIfNeeded();
 
     // 2. FILE-02: Table `interests`
     for (let i = 0; i < INTERESTS_DATA.length; i++) {
       const item = INTERESTS_DATA[i];
-      await setDoc(doc(db, 'interests', item.id), {
+      batch.set(doc(db, 'interests', item.id), {
         ...item,
         sort_order: i + 1,
         updated_at: serverTimestamp(),
       });
+      operationCount++;
+      await commitBatchIfNeeded();
     }
 
     // 3. FILE-03: Table `skills`
     for (let i = 0; i < SKILL_CATEGORIES.length; i++) {
       const cat = SKILL_CATEGORIES[i];
       const docId = cat.code.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      await setDoc(doc(db, 'skills', docId), {
+      batch.set(doc(db, 'skills', docId), {
         ...cat,
         sort_order: i + 1,
         updated_at: serverTimestamp(),
       });
+      operationCount++;
+      await commitBatchIfNeeded();
     }
 
     // 4. FILE-04: Table `projects`
     for (let i = 0; i < PROJECTS_DATA.length; i++) {
       const proj = PROJECTS_DATA[i];
-      await setDoc(doc(db, 'projects', proj.id), {
+      batch.set(doc(db, 'projects', proj.id), {
         ...proj,
         sort_order: i + 1,
         updated_at: serverTimestamp(),
       });
+      operationCount++;
+      await commitBatchIfNeeded();
     }
 
     // 5. FILE-05: Table `certificates`
     for (let i = 0; i < CERTIFICATES_DATA.length; i++) {
       const cert = CERTIFICATES_DATA[i];
-      await setDoc(doc(db, 'certificates', cert.id), {
+      batch.set(doc(db, 'certificates', cert.id), {
         ...cert,
         sort_order: i + 1,
         updated_at: serverTimestamp(),
       });
+      operationCount++;
+      await commitBatchIfNeeded();
     }
 
     // 6. FILE-06: Table `contact`
-    await setDoc(doc(db, 'contact', 'main'), {
+    batch.set(doc(db, 'contact', 'main'), {
       ...CONTACT_DATA,
       updated_at: serverTimestamp(),
     });
+    operationCount++;
+    await commitBatchIfNeeded();
+
+    // Commit any remaining operations
+    if (operationCount > 0) {
+      await batch.commit();
+    }
 
     return { success: true, message: 'Semua 6 tabel berhasil di-seed ke Firestore!' };
   } catch (err: unknown) {
