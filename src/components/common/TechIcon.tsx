@@ -23,7 +23,9 @@ interface TechIconProps {
   size?: number;
 }
 
-export const TechIcon: React.FC<TechIconProps> = ({ name, className = 'w-5 h-5', size = 20 }) => {
+// ⚡ Bolt: Memoized to prevent unnecessary re-renders and regex evaluations
+// when rendered in loops (e.g., in SkillsSection which renders 34+ icons)
+export const TechIcon: React.FC<TechIconProps> = React.memo(({ name, className = 'w-5 h-5', size = 20 }) => {
   const normalized = name.toLowerCase().replace(/[\s\.\-_]/g, '');
 
   // SVG vectors for specific tech stacks
@@ -340,4 +342,6 @@ export const TechIcon: React.FC<TechIconProps> = ({ name, className = 'w-5 h-5',
     default:
       return <Code2 className={className} />;
   }
-};
+});
+
+TechIcon.displayName = 'TechIcon';
