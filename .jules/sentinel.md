@@ -1,0 +1,4 @@
+## 2023-10-03 - [Fix] API Rate Limit IP Spoofing Vulnerability
+**Vulnerability:** The contact form API (`/api/contact`) extracted the client's IP address from `req.headers.get('x-forwarded-for')` and always selected the first (left-most) IP in the list. Attackers could easily bypass rate limits by setting a fake `X-Forwarded-For` header, supplying a new random IP on each request.
+**Learning:** By default, standard reverse proxies append the client's actual IP to the end of the `X-Forwarded-For` list. Trusting the first IP leaves the system vulnerable to spoofing, especially since Node.js/Next.js frameworks don't natively enforce proxy topologies in this context.
+**Prevention:** Always use the right-most IP in the `X-Forwarded-For` chain (or `x-real-ip`) for rate-limiting calculations unless a trusted proxies array explicitly defines the proxy topology and strips spoofed prefixes.

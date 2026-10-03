@@ -9,8 +9,22 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export async function POST(req: NextRequest) {
   try {
-    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const ip = rawIp.split(',')[0].trim();
+    // 🛡️ Sentinel: Fix rate limit bypass
+    // Relying on x-forwarded-for can be spoofed by an attacker sending multiple requests
+    // with different x-forwarded-for values. Since x-forwarded-for appends the client IP
+    // to the end when passing through proxies (or left-most depending on the proxy chain),
+    // it's safer to use the right-most IP or x-real-ip if we don't know the proxy topology.
+    // Or, for rate limiting, we can fallback to the `request.headers.get('x-real-ip')` first.
+    let ip = 'unknown';
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    if (forwardedFor) {
+      // The right-most IP is typically the most reliable if we are behind a single reverse proxy
+      const ips = forwardedFor.split(',').map((s) => s.trim());
+      ip = ips[ips.length - 1];
+    } else {
+      ip = req.headers.get('x-real-ip') || 'unknown';
+    }
+
     const now = Date.now();
     const timestamps = RATE_LIMIT.get(ip)?.filter(t => now - t < 60000) || [];
     
