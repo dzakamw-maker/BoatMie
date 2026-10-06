@@ -36,10 +36,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // SEC-003: Rate limiting with bounded memory
-    const forwarded = req.headers.get('x-forwarded-for');
-    const rawIp = forwarded ? forwarded.split(',')[0].trim() : (req.headers.get('x-real-ip') || 'unknown');
-    const ip = rawIp || 'unknown';
+    // SEC-003: Rate limiting with bounded memory & robust IP resolution
+    let ip = 'unknown';
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    if (forwardedFor) {
+      const ips = forwardedFor.split(',').map((s) => s.trim());
+      ip = ips[ips.length - 1] || 'unknown';
+    } else {
+      ip = req.headers.get('x-real-ip') || 'unknown';
+    }
     const now = Date.now();
     pruneExpiredRateLimits(now);
 

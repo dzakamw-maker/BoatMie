@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   ProjectItem,
   CertificateItem,
+  CertificateCategory,
   SkillCategory,
   InterestItem,
   ContactMessage,
@@ -417,7 +418,7 @@ export default function AdminPage() {
     metricsRaw: '',
     sortOrder: 0,
   };
-  const [projectForm, setProjectForm] = useState(initialProjectForm);
+  const [projectForm, setProjectForm] = useState<Partial<ProjectItem> & { techStackRaw?: string; metricsRaw?: string; sortOrder?: number }>(initialProjectForm);
 
   // --- Certificate Form State ---
   const initialCertForm: Partial<CertificateItem> & { skillsRaw?: string; sortOrder?: number } = {
@@ -437,7 +438,7 @@ export default function AdminPage() {
     imageScale: 100,
     sortOrder: 0,
   };
-  const [certForm, setCertForm] = useState(initialCertForm);
+  const [certForm, setCertForm] = useState<Partial<CertificateItem> & { skillsRaw?: string; sortOrder?: number }>(initialCertForm);
 
   // --- Skill Category Form State ---
   const initialSkillForm: Partial<SkillCategory> & { skillsRaw?: string; sortOrder?: number } = {
@@ -659,7 +660,7 @@ export default function AdminPage() {
       imageScale: projectForm.imageScale ?? 100,
       featured: projectForm.featured ?? false,
       date: projectForm.date || '2026',
-      status: (projectForm.status as any) || 'Deployed',
+      status: projectForm.status || 'Deployed',
       metrics: metricsArray,
     };
 
@@ -681,7 +682,7 @@ export default function AdminPage() {
       issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
       expiryDate: certForm.expiryDate || '',
       credentialId: certForm.credentialId || 'REF-PREVIEW-001',
-      category: (certForm.category as any) || 'Kompetensi',
+      category: certForm.category || 'Kompetensi',
       description: certForm.description || 'Pernyataan akreditasi dan verifikasi kompetensi...',
       skills: skillsArray.length > 0 ? skillsArray : ['Web Development', 'TypeScript'],
       verificationUrl: certForm.verificationUrl || '',
@@ -1081,7 +1082,7 @@ export default function AdminPage() {
       issueDate: certForm.issueDate || new Date().toISOString().split('T')[0],
       expiryDate: certForm.expiryDate || '',
       credentialId: certForm.credentialId || '',
-      category: (certForm.category as any) || 'Kompetensi',
+      category: certForm.category || 'Kompetensi',
       description: certForm.description || '',
       skills: skillsArray,
       verificationUrl: certForm.verificationUrl || '',
@@ -2117,7 +2118,7 @@ export default function AdminPage() {
                                   : 'Lainnya',
                             });
                           } else {
-                            setCertForm({ ...certForm, category: val as any });
+                            setCertForm({ ...certForm, category: val as CertificateCategory });
                           }
                         }}
                         className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white focus:border-amber-500 focus:outline-hidden"
