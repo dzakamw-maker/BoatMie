@@ -377,9 +377,9 @@ export function sanitizeUrl(url?: string): string {
     return trimmed;
   }
 
-  // Allow safe relative paths, anchor fragments, or valid mailto
+  // Allow safe relative paths (preventing protocol-relative // or /\), anchor fragments, or valid mailto
   if (
-    trimmed.startsWith('/') ||
+    (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\')) ||
     trimmed.startsWith('#') ||
     /^mailto:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i.test(trimmed)
   ) {

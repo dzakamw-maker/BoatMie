@@ -799,13 +799,25 @@ export default function AdminPage() {
     }
   };
 
-  // Check existing session via secure server-side API (HttpOnly Cookie)
+  // Check existing session via secure Firebase Auth state
   useEffect(() => {
-    import('firebase/auth').then(({ getAuth, onAuthStateChanged }) => {
+    import('firebase/auth').then(({ getAuth, onAuthStateChanged, signOut }) => {
       const auth = getAuth();
       const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const ADMIN_EMAIL = 'dzakamw@gmail.com';
         if (user) {
-          setIsAuthenticated(true);
+          if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
+            setIsAuthenticated(true);
+            setAuthError('');
+          } else {
+            setIsAuthenticated(false);
+            if (user.email?.toLowerCase() !== ADMIN_EMAIL) {
+              setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
+            } else if (!user.emailVerified) {
+              setAuthError('Akses ditolak: Alamat email admin belum diverifikasi.');
+            }
+            signOut(auth).catch(() => {});
+          }
         } else {
           setIsAuthenticated(false);
         }
@@ -868,14 +880,26 @@ export default function AdminPage() {
     setAuthError('');
 
     try {
-      const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+      const { getAuth, signInWithEmailAndPassword, signOut } = await import('firebase/auth');
       const auth = getAuth();
-      await signInWithEmailAndPassword(auth, emailInput, pinInput);
-      
-      setIsAuthenticated(true);
-      setPinInput('');
-      setEmailInput('');
-      setAuthError('');
+      const userCredential = await signInWithEmailAndPassword(auth, emailInput, pinInput);
+      const user = userCredential.user;
+      const ADMIN_EMAIL = 'dzakamw@gmail.com';
+
+      if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
+        setIsAuthenticated(true);
+        setPinInput('');
+        setEmailInput('');
+        setAuthError('');
+      } else {
+        await signOut(auth);
+        setIsAuthenticated(false);
+        if (user.email?.toLowerCase() !== ADMIN_EMAIL) {
+          setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
+        } else {
+          setAuthError('Akses ditolak: Alamat email admin belum diverifikasi.');
+        }
+      }
     } catch (err: any) {
       if (err.code === 'auth/too-many-requests') {
         setAuthError('Terlalu banyak percobaan login. Coba lagi nanti.');

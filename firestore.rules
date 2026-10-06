@@ -4,7 +4,8 @@ service cloud.firestore {
     // Helper function: verifies that the authenticated user is the designated admin
     function isAdmin() {
       return request.auth != null && 
-             request.auth.token.email == "dzakamw@gmail.com";
+             request.auth.token.email == "dzakamw@gmail.com" &&
+             request.auth.token.email_verified == true;
     }
 
     // Public read for portfolio display, write restricted to Admin
@@ -18,6 +19,8 @@ service cloud.firestore {
     // Messages: allow validated creation, read/update/delete restricted to Admin
     match /messages/{msgId} {
       allow create: if request.resource.data.keys().hasAll(['name','email','category','message'])
+                    && request.resource.data.keys().hasOnly(['name','email','category','message','is_read','created_at'])
+                    && (!('is_read' in request.resource.data) || request.resource.data.is_read == false)
                     && request.resource.data.name is string
                     && request.resource.data.name.size() > 0
                     && request.resource.data.name.size() <= 200

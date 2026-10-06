@@ -7,11 +7,42 @@ const RATE_LIMIT = new Map<string, number[]>();
 const MAX_PER_MINUTE = 3;
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+function pruneExpiredRateLimits(now: number) {
+  if (RATE_LIMIT.size > 500) {
+    for (const [key, times] of RATE_LIMIT.entries()) {
+      const active = times.filter(t => now - t < 60000);
+      if (active.length === 0) {
+        RATE_LIMIT.delete(key);
+      } else {
+        RATE_LIMIT.set(key, active);
+      }
+    }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const ip = rawIp.split(',')[0].trim();
+    // SEC-004: Validate Origin against Host header
+    const origin = req.headers.get('origin');
+    const host = req.headers.get('host');
+    if (origin && host) {
+      try {
+        const originHost = new URL(origin).host;
+        if (originHost !== host) {
+          return NextResponse.json({ success: false, error: 'Origin tidak diizinkan.' }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ success: false, error: 'Origin tidak valid.' }, { status: 403 });
+      }
+    }
+
+    // SEC-003: Rate limiting with bounded memory
+    const forwarded = req.headers.get('x-forwarded-for');
+    const rawIp = forwarded ? forwarded.split(',')[0].trim() : (req.headers.get('x-real-ip') || 'unknown');
+    const ip = rawIp || 'unknown';
     const now = Date.now();
+    pruneExpiredRateLimits(now);
+
     const timestamps = RATE_LIMIT.get(ip)?.filter(t => now - t < 60000) || [];
     
     if (timestamps.length >= MAX_PER_MINUTE) {
