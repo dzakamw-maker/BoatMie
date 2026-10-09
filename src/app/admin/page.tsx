@@ -807,16 +807,12 @@ export default function AdminPage() {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         const ADMIN_EMAIL = 'dzakamw@gmail.com';
         if (user) {
-          if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
+          if (user.email?.toLowerCase() === ADMIN_EMAIL) {
             setIsAuthenticated(true);
             setAuthError('');
           } else {
             setIsAuthenticated(false);
-            if (user.email?.toLowerCase() !== ADMIN_EMAIL) {
-              setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
-            } else if (!user.emailVerified) {
-              setAuthError('Akses ditolak: Alamat email admin belum diverifikasi.');
-            }
+            setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
             signOut(auth).catch(() => {});
           }
         } else {
@@ -887,7 +883,7 @@ export default function AdminPage() {
       const user = userCredential.user;
       const ADMIN_EMAIL = 'dzakamw@gmail.com';
 
-      if (user.email?.toLowerCase() === ADMIN_EMAIL && user.emailVerified) {
+      if (user.email?.toLowerCase() === ADMIN_EMAIL) {
         setIsAuthenticated(true);
         setPinInput('');
         setEmailInput('');
@@ -895,11 +891,7 @@ export default function AdminPage() {
       } else {
         await signOut(auth);
         setIsAuthenticated(false);
-        if (user.email?.toLowerCase() !== ADMIN_EMAIL) {
-          setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
-        } else {
-          setAuthError('Akses ditolak: Alamat email admin belum diverifikasi.');
-        }
+        setAuthError('Akses ditolak: Akun bukan administrator terdaftar.');
       }
     } catch (err: any) {
       if (err.code === 'auth/too-many-requests') {

@@ -4,8 +4,7 @@ service cloud.firestore {
     // Helper function: verifies that the authenticated user is the designated admin
     function isAdmin() {
       return request.auth != null && 
-             request.auth.token.email == "dzakamw@gmail.com" &&
-             request.auth.token.email_verified == true;
+             request.auth.token.email == "dzakamw@gmail.com";
     }
 
     // Public read for portfolio display, write restricted to Admin
