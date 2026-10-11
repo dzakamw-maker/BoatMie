@@ -237,7 +237,11 @@ function ImageFramingInput({
               ) : (
                 <div className="text-[9px] text-red-400 p-2 text-center leading-tight font-sans">
                   <span className="font-bold block mb-0.5">URL Tidak Dapat Dimuat</span>
-                  <span className="text-[8px] text-neutral-400 font-mono">Pastikan izin Google Drive: &quot;Siapa saja yang memiliki link&quot;</span>
+                  <span className="text-[8px] text-neutral-400 font-mono">
+                    {previewSrc.includes('ibb.co')
+                      ? 'Domain ImgBB sering diblokir ISP Indonesia (Internet Positif) atau SSL error. Disarankan pakai Google Drive atau PostImages.'
+                      : 'Pastikan URL berupa file gambar langsung (.jpg, .png) atau link Google Drive publik.'}
+                  </span>
                 </div>
               )}
             </div>

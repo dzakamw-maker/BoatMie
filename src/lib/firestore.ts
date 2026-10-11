@@ -342,6 +342,11 @@ export function normalizeImageUrl(url?: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
 
+  // ImgBB CDN domain fix (i.ibb.co.com has invalid SSL, real image CDN is i.ibb.co)
+  if (trimmed.includes('i.ibb.co.com')) {
+    return trimmed.replace('i.ibb.co.com', 'i.ibb.co');
+  }
+
   // Google Drive file view links e.g. drive.google.com/file/d/FILE_ID/view...
   const gDriveFileMatch = trimmed.match(/(?:drive|docs)\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
   if (gDriveFileMatch && gDriveFileMatch[1]) {

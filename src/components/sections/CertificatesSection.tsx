@@ -187,7 +187,7 @@ export const CertificatesSection: React.FC<CertificatesSectionProps> = ({
             SERTIFIKAT & PENCAPAIAN
           </h1>
           <p className="font-serif text-base sm:text-lg text-neutral-700 max-w-2xl leading-relaxed">
-            Dokumentasi sertifikasi resmi, olimpiade sains kompetitif (ISQO), penguasaan rekayasa AI, serta verifikasi kompetensi standar kejuruan perangkat lunak.
+            Dokumentasi sertifikasi resmi, Pelatihan Keselamatan dan Kesehatan Kerja,penguasaan rekayasa AI, serta verifikasi kompetensi standar kejuruan perangkat lunak.
           </p>
         </div>
 
